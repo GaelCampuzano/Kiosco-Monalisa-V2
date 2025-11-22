@@ -1,0 +1,95 @@
+"use client";
+
+import { useActionState } from "react";
+import { login } from "@/app/actions/auth";
+import { Shield, ArrowLeft, Lock, User } from "lucide-react";
+import Link from "next/link";
+
+const initialState = {
+  error: '',
+};
+
+export default function LoginPage() {
+  const [state, formAction, isPending] = useActionState(login, initialState);
+
+  return (
+    <div className="min-h-screen bg-monalisa-navy flex items-center justify-center p-6 relative overflow-hidden selection:bg-monalisa-gold selection:text-monalisa-navy">
+      {/* Fondo decorativo sutil */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#1f3a5e] via-monalisa-navy to-[#0a1525] -z-10" />
+
+      <div className="w-full max-w-md">
+        {/* Botón Volver al Kiosco */}
+        <Link href="/" className="group flex items-center gap-2 text-monalisa-silver/50 hover:text-monalisa-gold transition-colors mb-8 text-xs font-bold tracking-widest uppercase w-fit">
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Regresar al Kiosco
+        </Link>
+
+        {/* Tarjeta de Login */}
+        <div className="bg-monalisa-navy/50 backdrop-blur-xl border border-monalisa-gold/20 p-8 md:p-12 rounded-sm shadow-2xl relative overflow-hidden">
+          
+          {/* Brillo superior decorativo */}
+          <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-monalisa-gold/50 to-transparent opacity-50" />
+
+          <div className="text-center mb-10">
+            <div className="w-16 h-16 bg-monalisa-gold/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-monalisa-gold/20 shadow-[0_0_20px_rgba(223,200,148,0.1)]">
+              <Shield className="w-8 h-8 text-monalisa-gold" />
+            </div>
+            <h1 className="font-serif text-3xl text-white mb-2 tracking-wide">Acceso Administrativo</h1>
+            <p className="text-monalisa-silver/60 text-sm font-light">Sistema de Gestión Sunset Monalisa</p>
+          </div>
+
+          <form action={formAction} className="space-y-6">
+            {/* Input Usuario */}
+            <div className="space-y-2 group">
+              <label className="text-xs font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">Usuario</label>
+              <div className="relative">
+                <User className="absolute left-4 top-3.5 w-5 h-5 text-monalisa-silver/30 group-focus-within:text-monalisa-gold transition-colors" />
+                <input 
+                  name="user"
+                  type="text" 
+                  required
+                  className="w-full bg-[#0f1e33] border border-monalisa-gold/10 rounded-sm py-3 pl-12 pr-4 text-white focus:border-monalisa-gold outline-none transition-all placeholder:text-monalisa-silver/10 font-serif"
+                  placeholder="admin"
+                />
+              </div>
+            </div>
+
+            {/* Input Contraseña */}
+            <div className="space-y-2 group">
+              <label className="text-xs font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">Contraseña</label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-3.5 w-5 h-5 text-monalisa-silver/30 group-focus-within:text-monalisa-gold transition-colors" />
+                <input 
+                  name="password"
+                  type="password" 
+                  required
+                  className="w-full bg-[#0f1e33] border border-monalisa-gold/10 rounded-sm py-3 pl-12 pr-4 text-white focus:border-monalisa-gold outline-none transition-all placeholder:text-monalisa-silver/10 font-serif"
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+
+            {/* Mensaje de Error */}
+            {state?.error && (
+              <div className="p-3 bg-red-900/20 border border-red-500/20 rounded-sm text-red-200 text-xs text-center font-medium tracking-wide animate-pulse">
+                {state.error}
+              </div>
+            )}
+
+            {/* Botón Submit */}
+            <button 
+              type="submit" 
+              disabled={isPending}
+              className="w-full bg-monalisa-bronze hover:bg-monalisa-gold hover:text-monalisa-navy text-white font-bold py-4 rounded-sm uppercase tracking-[0.2em] text-xs transition-all duration-300 shadow-[0_0_15px_rgba(147,119,55,0.2)] hover:shadow-[0_0_25px_rgba(223,200,148,0.4)] disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+            >
+              {isPending ? 'Verificando...' : 'Iniciar Sesión'}
+            </button>
+          </form>
+        </div>
+        
+        <div className="text-center mt-8 text-monalisa-silver/20 text-xs font-serif italic">
+          Solo personal autorizado • v1.0
+        </div>
+      </div>
+    </div>
+  );
+}
