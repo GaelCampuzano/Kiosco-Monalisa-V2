@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { useTips } from "@/hooks/useTips";
 import { TipPercentage, KioskStep } from "@/types";
-import { Utensils, Shield, Star, Wifi, WifiOff } from "lucide-react"; // <--- Nuevos iconos
+import { Shield, Star, Wifi, WifiOff } from "lucide-react";
 
 export default function Kiosk() {
   const { saveTip, isOffline } = useTips();
@@ -51,7 +51,6 @@ export default function Kiosk() {
       tipLabel: "Servicio",
       thanks: "¡Gracias por su visita!",
       bye: "Esperamos verle pronto.",
-      // Textos de conexión
       online: "En línea",
       offline: "Sin conexión",
       offlineMsg: "Datos guardados localmente. Se enviarán al reconectar.",
@@ -67,7 +66,6 @@ export default function Kiosk() {
       tipLabel: "Service",
       thanks: "Thank you for visiting!",
       bye: "We hope to see you soon.",
-      // Connection texts
       online: "Online",
       offline: "Offline",
       offlineMsg: "Data saved locally. Will sync when back online.",
@@ -137,7 +135,6 @@ export default function Kiosk() {
 
       {/* --- UI FLOTANTE --- */}
       
-      {/* Botones de Idioma */}
       <div className="absolute top-8 left-8 z-30 flex gap-4">
         {["es", "en"].map((l) => (
           <button 
@@ -154,7 +151,6 @@ export default function Kiosk() {
         ))}
       </div>
 
-      {/* NUEVO: Indicador de Estado de Conexión */}
       <div className={`absolute top-8 right-8 z-30 flex items-center gap-3 px-4 py-2 rounded-lg backdrop-blur-md border transition-all duration-500 ${
         isOffline 
           ? 'bg-red-900/60 border-red-500/30 text-red-100 shadow-[0_0_15px_rgba(220,38,38,0.3)]' 
@@ -166,8 +162,6 @@ export default function Kiosk() {
           <span className={`text-xs font-bold tracking-widest uppercase ${isOffline ? 'text-red-200' : 'text-green-200'}`}>
             {isOffline ? text.offline : text.online}
           </span>
-          
-          {/* Mensaje tranquilizador solo visible en modo Offline */}
           {isOffline && (
             <span className="text-[10px] font-light opacity-90 leading-tight max-w-[150px] mt-0.5 text-red-100">
               {text.offlineMsg}
@@ -176,7 +170,6 @@ export default function Kiosk() {
         </div>
       </div>
 
-      {/* Acceso Admin */}
       <Link href="/admin" className="fixed bottom-8 right-8 z-30 opacity-30 hover:opacity-100 transition-opacity p-2 text-white">
         <Shield className="w-5 h-5" />
       </Link>
@@ -194,9 +187,28 @@ export default function Kiosk() {
               exit={{ opacity: 0, y: -20 }}
               className="w-full max-w-md bg-[#162B46]/40 backdrop-blur-xl border border-white/10 p-8 md:p-12 rounded-sm shadow-2xl"
             >
-              <div className="text-center mb-10">
-                <Utensils className="w-10 h-10 mx-auto text-monalisa-gold mb-4 opacity-90" />
-                <h1 className="font-serif text-3xl text-white tracking-wide drop-shadow-sm">{text.waiterTitle}</h1>
+              <div className="text-center mb-8">
+                
+                {/* LOGO CON EFECTO SPOTLIGHT (LUZ RADIAL) */}
+                <div className="relative w-full h-32 mx-auto mb-6 flex items-center justify-center">
+                  {/* Capa de luz de fondo difusa */}
+                  <div className="absolute inset-0 bg-[radial-gradient(closest-side,rgba(255,255,255,0.8)_20%,transparent_100%)] blur-xl" />
+                  
+                  {/* Logo encima */}
+                  <div className="relative w-64 h-28">
+                    <Image 
+                      src="/logo-monalisa.svg" 
+                      alt="Logo Sunset Monalisa" 
+                      fill 
+                      className="object-contain" 
+                      priority
+                    />
+                  </div>
+                </div>
+
+                <h1 className="font-serif text-3xl text-white tracking-wide drop-shadow-sm border-t border-white/10 pt-6">
+                  {text.waiterTitle}
+                </h1>
               </div>
               
               <form onSubmit={handleWaiterSubmit} className="space-y-8">

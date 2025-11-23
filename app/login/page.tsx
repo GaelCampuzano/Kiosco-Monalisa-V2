@@ -2,8 +2,9 @@
 
 import { useActionState } from "react";
 import { login } from "@/app/actions/auth";
-import { Shield, ArrowLeft, Lock, User } from "lucide-react";
+import { ArrowLeft, Lock, User } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 const initialState = {
   error: '',
@@ -30,9 +31,24 @@ export default function LoginPage() {
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-monalisa-gold/50 to-transparent opacity-50" />
 
           <div className="text-center mb-10">
-            <div className="w-16 h-16 bg-monalisa-gold/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-monalisa-gold/20 shadow-[0_0_20px_rgba(223,200,148,0.1)]">
-              <Shield className="w-8 h-8 text-monalisa-gold" />
+            
+            {/* LOGO CON SPOTLIGHT EN LOGIN */}
+            <div className="relative w-full h-32 mx-auto mb-6 flex items-center justify-center hover:scale-105 transition-transform duration-500">
+               {/* Luz de fondo difusa */}
+               <div className="absolute inset-0 bg-[radial-gradient(closest-side,rgba(255,255,255,0.8)_20%,transparent_100%)] blur-xl" />
+               
+               {/* Logo */}
+               <div className="relative w-64 h-28">
+                <Image
+                  src="/logo-monalisa.svg"
+                  alt="Sunset Monalisa Logo"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
             </div>
+
             <h1 className="font-serif text-3xl text-white mb-2 tracking-wide">Acceso Administrativo</h1>
             <p className="text-monalisa-silver/60 text-sm font-light">Sistema de Gestión Sunset Monalisa</p>
           </div>
