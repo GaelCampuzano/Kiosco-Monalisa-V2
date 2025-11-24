@@ -215,10 +215,12 @@ export default function Kiosk() {
                 <div className="group">
                   <label className="block text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest mb-2 ml-1">{text.table}</label>
                   <input
-                    type="number"
+                    // CAMBIO CLAVE: Cambiado de type="number" a type="text"
+                    type="text" 
                     required
                     value={tableNumber}
-                    onChange={(e) => setTableNumber(e.target.value)}
+                    // MANTENER: El filtro para asegurar que solo se guarden dígitos
+                    onChange={(e) => setTableNumber(e.target.value.replace(/[^0-9]/g, ''))}
                     className="w-full bg-black/20 border border-white/10 focus:border-monalisa-gold rounded-sm text-white text-2xl py-3 px-4 outline-none transition-all font-serif placeholder:text-white/10 text-center"
                     placeholder="#"
                   />
@@ -268,10 +270,12 @@ export default function Kiosk() {
 
               <div className="grid grid-cols-3 gap-6 md:gap-10 px-4 max-w-5xl mx-auto">
                 {[20, 23, 25].map((pct) => (
-                  <button
+                  <motion.button
                     key={pct}
                     onClick={() => handleTipSelection(pct as TipPercentage)}
-                    className="group relative flex flex-col items-center justify-center py-16 md:py-24 rounded-sm border border-white/10 hover:border-monalisa-gold bg-[#162B46]/60 backdrop-blur-md transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] cursor-pointer"
+                    whileTap={{ scale: 0.95 }} 
+                    whileHover={{ scale: 1.05 }}
+                    className="group relative flex flex-col items-center justify-center py-16 md:py-24 rounded-sm border border-white/10 hover:border-monalisa-gold bg-[#162B46]/60 backdrop-blur-md transition-all duration-500 hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] cursor-pointer"
                   >
                     <div className="absolute inset-0 bg-gradient-to-b from-monalisa-gold/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     
@@ -284,7 +288,7 @@ export default function Kiosk() {
                       {text.tipLabel}
                       <div className="h-[1px] w-6 bg-current opacity-60" />
                     </div>
-                  </button>
+                  </motion.button>
                 ))}
               </div>
             </motion.div>
