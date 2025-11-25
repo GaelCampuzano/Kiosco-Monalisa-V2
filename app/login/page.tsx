@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { login } from "@/app/actions/auth";
-import { ArrowLeft, Lock, User } from "lucide-react";
+import { ArrowLeft, Lock, User, RefreshCw } from "lucide-react"; 
 import Link from "next/link";
 import Image from "next/image";
 
@@ -91,13 +91,20 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Botón Submit */}
+            {/* Botón Submit con animación de carga */}
             <button 
               type="submit" 
               disabled={isPending}
-              className="w-full bg-monalisa-bronze hover:bg-monalisa-gold hover:text-monalisa-navy text-white font-bold py-4 rounded-sm uppercase tracking-[0.2em] text-xs transition-all duration-300 shadow-[0_0_15px_rgba(147,119,55,0.2)] hover:shadow-[0_0_25px_rgba(223,200,148,0.4)] disabled:opacity-50 disabled:cursor-not-allowed mt-4"
+              className="w-full bg-monalisa-bronze hover:bg-monalisa-gold hover:text-monalisa-navy text-white font-bold py-4 rounded-sm uppercase tracking-[0.2em] text-xs transition-all duration-300 shadow-[0_0_15px_rgba(147,119,55,0.2)] hover:shadow-[0_0_25px_rgba(223,200,148,0.4)] disabled:opacity-50 disabled:cursor-not-allowed mt-4 flex items-center justify-center"
             >
-              {isPending ? 'Verificando...' : 'Iniciar Sesión'}
+              {isPending ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Verificando...
+                </>
+              ) : (
+                'Iniciar Sesión'
+              )}
             </button>
           </form>
         </div>

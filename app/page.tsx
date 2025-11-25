@@ -7,7 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { useTips } from "@/hooks/useTips";
 import { TipPercentage, KioskStep } from "@/types";
-import { Shield, Star, Wifi, WifiOff } from "lucide-react";
+import { Shield, Star } from "lucide-react"; 
+
+// CORRECCIÓN FINAL DE RUTA: Apuntando a la carpeta app/components con el alias @/
+// (Esto depende de que tu tsconfig.json tenga configurado el alias "@/": ["./*"] o similar)
+import { LanguageToggle } from "@/app/components/LanguageToggle";
+import { StatusIndicator } from "@/app/components/StatusIndicator";
 
 export default function Kiosk() {
   const { saveTip, isOffline } = useTips();
@@ -17,6 +22,7 @@ export default function Kiosk() {
   const [waiterName, setWaiterName] = useState("");
   const [tableNumber, setTableNumber] = useState("");
 
+  // Lógica de Wake Lock
   useEffect(() => {
     let wakeLock: WakeLockSentinel | null = null;
     const requestWakeLock = async () => {
@@ -28,11 +34,16 @@ export default function Kiosk() {
         console.error('Error Wake Lock:', err);
       }
     };
+    
     requestWakeLock();
+    
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') requestWakeLock();
     };
+    
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    // Cleanup function
     return () => {
       if (wakeLock) wakeLock.release();
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -133,43 +144,15 @@ export default function Kiosk() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#162B46] via-transparent to-[#162B46]/30" />
       </div>
 
-      {/* --- UI FLOTANTE --- */}
+      {/* --- UI FLOTANTE REFACTORIZADA --- */}
       
-      <div className="absolute top-8 left-8 z-30 flex gap-4">
-        {["es", "en"].map((l) => (
-          <button 
-            key={l}
-            onClick={() => setLang(l as "es" | "en")} 
-            className={`text-xs font-bold tracking-[0.2em] uppercase transition-all duration-300 ${
-              lang === l 
-                ? 'text-monalisa-gold border-b border-monalisa-gold pb-1' 
-                : 'text-white/60 hover:text-white'
-            }`}
-          >
-            {l}
-          </button>
-        ))}
-      </div>
+      {/* 1. Selector de Idioma */}
+      <LanguageToggle lang={lang} setLang={setLang} />
 
-      <div className={`absolute top-8 right-8 z-30 flex items-center gap-3 px-4 py-2 rounded-lg backdrop-blur-md border transition-all duration-500 ${
-        isOffline 
-          ? 'bg-red-900/60 border-red-500/30 text-red-100 shadow-[0_0_15px_rgba(220,38,38,0.3)]' 
-          : 'bg-green-900/30 border-green-500/20 text-green-100/80 hover:bg-green-900/50'
-      }`}>
-        {isOffline ? <WifiOff className="w-5 h-5 animate-pulse" /> : <Wifi className="w-4 h-4" />}
-        
-        <div className="flex flex-col">
-          <span className={`text-xs font-bold tracking-widest uppercase ${isOffline ? 'text-red-200' : 'text-green-200'}`}>
-            {isOffline ? text.offline : text.online}
-          </span>
-          {isOffline && (
-            <span className="text-[10px] font-light opacity-90 leading-tight max-w-[150px] mt-0.5 text-red-100">
-              {text.offlineMsg}
-            </span>
-          )}
-        </div>
-      </div>
+      {/* 2. Indicador de Estado de Red */}
+      <StatusIndicator isOffline={isOffline} text={text} />
 
+      {/* Botón de Admin */}
       <Link href="/admin" className="fixed bottom-8 right-8 z-30 opacity-30 hover:opacity-100 transition-opacity p-2 text-white">
         <Shield className="w-5 h-5" />
       </Link>
@@ -215,11 +198,11 @@ export default function Kiosk() {
                 <div className="group">
                   <label className="block text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest mb-2 ml-1">{text.table}</label>
                   <input
-                    // CAMBIO CLAVE: Cambiado de type="number" a type="text"
+                    // CORRECCIÓN: Cambiado a type="text" para evitar la notación científica.
                     type="text" 
                     required
                     value={tableNumber}
-                    // MANTENER: El filtro para asegurar que solo se guarden dígitos
+                    // FILTRO: Mantiene solo dígitos (0-9).
                     onChange={(e) => setTableNumber(e.target.value.replace(/[^0-9]/g, ''))}
                     className="w-full bg-black/20 border border-white/10 focus:border-monalisa-gold rounded-sm text-white text-2xl py-3 px-4 outline-none transition-all font-serif placeholder:text-white/10 text-center"
                     placeholder="#"
@@ -268,7 +251,8 @@ export default function Kiosk() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-3 gap-6 md:gap-10 px-4 max-w-5xl mx-auto">
+              {/* MEJORA RESPONSIVA: grid-cols-1 en móvil, grid-cols-3 en md (horizontal) */}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-10 px-4 max-w-5xl mx-auto">
                 {[20, 23, 25].map((pct) => (
                   <motion.button
                     key={pct}
