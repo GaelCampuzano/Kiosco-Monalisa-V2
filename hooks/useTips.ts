@@ -1,83 +1,24 @@
-// hooks/useTips.ts
-import { useState, useEffect } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { TipRecord } from '@/types';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export function useTips() {
-  const [isOffline, setIsOffline] = useState(false);
+const COOKIE_NAME = 'monalisa_admin_session';
 
-  useEffect(() => {
-    // Detectar estado de red inicial
-    setIsOffline(!navigator.onLine);
+export function proxy(req: NextRequest) {
+  // 1. Obtener la cookie de sesión
+  const authCookie = req.cookies.get(COOKIE_NAME);
 
-    const handleOnline = () => {
-      setIsOffline(false);
-      syncOfflineTips(); // Intentar subir datos pendientes al volver online
-    };
-    const handleOffline = () => setIsOffline(true);
+  // 2. Comprobar la autenticación
+  if (!authCookie || authCookie.value !== 'authenticated') {
+    // Redirigir si no está autenticado
+    const loginUrl = new URL('/login', req.url);
+    return NextResponse.redirect(loginUrl);
+  }
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
-  const saveTip = async (data: Omit<TipRecord, 'id' | 'createdAt' | 'synced'>) => {
-    const newTip: TipRecord = {
-      ...data,
-      createdAt: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      synced: true,
-    };
-
-    try {
-      // 1. Intentar guardar en Firebase
-      if (!navigator.onLine) throw new Error('Offline');
-      
-      await addDoc(collection(db, "tips"), newTip);
-      console.log("Tip saved to Firebase");
-      
-    } catch (error) {
-      // 2. Si falla (BLOQUEO o OFFLINE), guardar localmente
-      console.warn("Network error or Blocked, saving locally", error);
-      newTip.synced = false;
-      
-      const localTips = JSON.parse(localStorage.getItem('offlineTips') || '[]');
-      localStorage.setItem('offlineTips', JSON.stringify([...localTips, newTip]));
-      
-      // 3. Actualizar el estado visual del UI
-      setIsOffline(true);
-
-    }
-    // NOTA CLAVE: La función termina sin lanzar un error, 
-    // permitiendo que 'setStep("THANK_YOU")' se ejecute en app/page.tsx.
-  };
-
-  const syncOfflineTips = async () => {
-    const localTipsString = localStorage.getItem('offlineTips');
-    if (!localTipsString) return;
-
-    const localTips: TipRecord[] = JSON.parse(localTipsString);
-    if (localTips.length === 0) return;
-
-    console.log(`Syncing ${localTips.length} tips...`);
-    const remainingTips: TipRecord[] = [];
-
-    for (const tip of localTips) {
-      try {
-        const tipToSave = { ...tip, synced: true };
-        await addDoc(collection(db, "tips"), tipToSave);
-      } catch (e) {
-        remainingTips.push(tip); // Si falla de nuevo, lo mantenemos en cola
-      }
-    }
-
-    localStorage.setItem('offlineTips', JSON.stringify(remainingTips));
-  };
-
-  return { saveTip, isOffline };
+  // 3. Continuar si está autenticado
+  return NextResponse.next();
 }
+
+export const config = {
+  // Asegura que el proxy solo se ejecute para /admin y sus subrutas
+  matcher: '/admin/:path*',
+};
