@@ -5,7 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import { useTips } from "@/hooks/useTips";
+// CORRECCIÓN: Cambiar alias a ruta relativa para resolver el problema de Turbopack
+import { useTips } from "../hooks/useTips"; 
 import { TipPercentage, KioskStep } from "@/types";
 import { Shield, Star } from "lucide-react"; 
 
