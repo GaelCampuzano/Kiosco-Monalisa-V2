@@ -1,3 +1,4 @@
+// gaelcampuzano/kiosco-monalisa-v2/Kiosco-Monalisa-V2-9a674889d1afa14dc04a5294767acfec23c1153f/hooks/useTips.ts
 import { useState, useEffect } from 'react';
 import { collection, addDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -34,18 +35,25 @@ export function useTips() {
     };
 
     try {
+      // Intentar guardar en Firebase
       if (!navigator.onLine) throw new Error('Offline');
       
       await addDoc(collection(db, "tips"), newTip);
       console.log("Tip saved to Firebase");
       
     } catch (error) {
-      console.warn("Network error or Offline, saving locally", error);
+      // Si falla (por offline o BLOCKED_BY_CLIENT), guardar localmente y continuar el flujo.
+      console.warn("Network error or Blocked, saving locally", error);
       newTip.synced = false;
       // Guardar en LocalStorage
       const localTips = JSON.parse(localStorage.getItem('offlineTips') || '[]');
       localStorage.setItem('offlineTips', JSON.stringify([...localTips, newTip]));
+      
+      // Aseguramos que el estado offline se muestre inmediatamente en el UI
+      setIsOffline(true);
     }
+    // NOTA CLAVE: La función no lanza un error (no hay 'throw' aquí), 
+    // lo que permite que 'await saveTip()' se complete exitosamente en app/page.tsx.
   };
 
   const syncOfflineTips = async () => {
