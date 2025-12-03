@@ -5,14 +5,27 @@ import { redirect } from 'next/navigation';
 
 const COOKIE_NAME = 'monalisa_admin_session';
 
+// Obtener las credenciales del entorno. 
+// NOTA: Estas variables (ADMIN_USER, ADMIN_PASSWORD) deben estar configuradas
+// en el archivo .env.local (local) o en las Environment Variables de Vercel (producción).
+const ADMIN_USER = process.env.ADMIN_USER;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
 export async function login(prevState: any, formData: FormData) {
   const user = formData.get('user') as string;
   const password = formData.get('password') as string;
+  
+  // 1. Validar que las variables de entorno para el login estén presentes.
+  if (!ADMIN_USER || !ADMIN_PASSWORD) {
+    console.error("ADMIN_USER o ADMIN_PASSWORD no están configuradas en el entorno del servidor.");
+    // Devolvemos un error genérico por seguridad.
+    return { error: 'Error de configuración del servidor. Contacta al administrador.' };
+  }
 
-  // Validamos contra las variables de entorno (.env.local)
+  // 2. Validamos las credenciales
   if (
-    user === process.env.ADMIN_USER && 
-    password === process.env.ADMIN_PASSWORD
+    user === ADMIN_USER && 
+    password === ADMIN_PASSWORD
   ) {
     const cookieStore = await cookies();
     
