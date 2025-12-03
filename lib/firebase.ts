@@ -1,5 +1,8 @@
+// gaelcampuzano/kiosco-monalisa-v2/Kiosco-Monalisa-V2-fb21c9b3474eb42df592d7d6737038bd55dab866/lib/firebase.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+// [NUEVO] Importar getAuth
+import { getAuth } from "firebase/auth"; //
 
 const firebaseConfig = {
   // Asegúrate de que todas estas variables (NEXT_PUBLIC_...) estén configuradas 
@@ -13,9 +16,13 @@ const firebaseConfig = {
 };
 
 // Inicializar Firebase solo si no existe una instancia previa (Singleton)
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp(); //
 
 // Inicializar Firestore (Base de datos)
-const db = getFirestore(app);
+const db = getFirestore(app); //
 
-export { db };
+// [NUEVO] Inicializar Auth
+const auth = getAuth(app);
+
+// [MODIFICADO] Exportar db y auth
+export { db, auth };

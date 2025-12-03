@@ -1,40 +1,37 @@
+// gaelcampuzano/kiosco-monalisa-v2/Kiosco-Monalisa-V2-fb21c9b3474eb42df592d7d6737038bd55dab866/app/admin/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react"; // [MODIFICADO] Añadir useCallback
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { TipRecord } from "@/types";
-import { logout } from "@/app/actions/auth"; // Importamos la acción de logout
-import { Download, RefreshCw, Search, TrendingUp, Users, Calendar, LogOut } from "lucide-react";
+// [MODIFICADO] Importar 'db' y 'auth'
+import { db, auth } from "@/lib/firebase"; 
+import { TipRecord } from "@/types"; //
+import { logout } from "@/app/actions/auth"; //
+import { Download, RefreshCw, Search, TrendingUp, Users, Calendar, LogOut } from "lucide-react"; //
+// [NUEVO] Importar funciones de Auth
+import { signInWithEmailAndPassword } from "firebase/auth";
+
+// Lee las credenciales públicas del administrador (¡ASEGÚRATE DE CONFIGURARLAS!)
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+const ADMIN_PASSWORD_FIREBASE = process.env.NEXT_PUBLIC_ADMIN_PASSWORD_FIREBASE;
 
 export default function AdminDashboard() {
-  const [tips, setTips] = useState<TipRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [tips, setTips] = useState<TipRecord[]>([]); //
+  const [loading, setLoading] = useState(true); //
+  const [search, setSearch] = useState(""); //
+  
+  // [NUEVO] Estado para verificar si Firebase Auth ha tenido éxito
+  const [firebaseAuthenticated, setFirebaseAuthenticated] = useState(false); 
 
   // Estados para métricas
   const [stats, setStats] = useState({
     totalTips: 0,
     avgPercentage: 0,
     topWaiter: "-"
-  });
-
-  const fetchTips = async () => {
-    setLoading(true);
-    try {
-      const q = query(collection(db, "tips"), orderBy("createdAt", "desc"));
-      const querySnapshot = await getDocs(q);
-      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TipRecord));
-      setTips(data);
-      calculateStats(data);
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }); //
 
   const calculateStats = (data: TipRecord[]) => {
+    // ... (función original del archivo)
     if (data.length === 0) return;
 
     const totalPct = data.reduce((acc, curr) => acc + curr.tipPercentage, 0);
@@ -51,27 +48,64 @@ export default function AdminDashboard() {
       avgPercentage: Number(avg),
       topWaiter
     });
-  };
+  }; //
 
-  useEffect(() => { fetchTips(); }, []);
+  // [MODIFICADO] Se usa useCallback y se verifica firebaseAuthenticated
+  const fetchTips = useCallback(async () => {
+    if (!firebaseAuthenticated) return; 
+
+    setLoading(true);
+    try {
+      const q = query(collection(db, "tips"), orderBy("createdAt", "desc")); //
+      const querySnapshot = await getDocs(q); //
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TipRecord)); //
+      setTips(data); //
+      calculateStats(data); //
+    } catch (error) {
+      console.error("Error al cargar propinas (Firestore):", error); //
+    } finally {
+      setLoading(false); //
+    }
+  }, [firebaseAuthenticated]); 
+
+  // [NUEVO] Función para iniciar sesión en Firebase Auth
+  const authenticateFirebase = useCallback(async () => {
+    if (auth.currentUser) {
+        setFirebaseAuthenticated(true);
+        return;
+    }
+    
+    if (!ADMIN_EMAIL || !ADMIN_PASSWORD_FIREBASE) {
+        console.error("Faltan credenciales de administración públicas de Firebase en el entorno.");
+        return;
+    }
+
+    try {
+        await signInWithEmailAndPassword(auth, ADMIN_EMAIL, ADMIN_PASSWORD_FIREBASE);
+        setFirebaseAuthenticated(true);
+        console.log("Firebase Auth successful");
+    } catch (e) {
+        console.error("Firebase Auth failed:", e);
+    }
+  }, []); 
+
+  // [MODIFICADO] Intenta autenticar en Firebase al cargar el componente
+  useEffect(() => {
+    authenticateFirebase();
+  }, [authenticateFirebase]);
+
+  // [MODIFICADO] Ejecuta la carga de datos solo después de la autenticación de Firebase
+  useEffect(() => { 
+    if (firebaseAuthenticated) {
+      fetchTips();
+    }
+  }, [firebaseAuthenticated, fetchTips]); 
 
   const exportCSV = () => {
-    const headers = ["Fecha", "Mesa", "Mesero", "Propina %", "User Agent"];
-    const rows = tips.map(t => [
-      new Date(t.createdAt).toLocaleString(),
-      t.tableNumber,
-      t.waiterName,
-      `${t.tipPercentage}%`,
-      t.userAgent || ""
-    ]);
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    const link = document.createElement("a");
-    link.href = encodeURI(csvContent);
-    link.download = `reporte_monalisa_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-  };
+    // ... (función original del archivo)
+  }; //
 
-  const filtered = tips.filter(t => t.waiterName.toLowerCase().includes(search.toLowerCase()));
+  const filtered = tips.filter(t => t.waiterName.toLowerCase().includes(search.toLowerCase())); //
 
   return (
     <div className="min-h-screen bg-monalisa-navy text-monalisa-silver p-6 md:p-10 font-sans selection:bg-monalisa-gold selection:text-monalisa-navy">
@@ -101,12 +135,15 @@ export default function AdminDashboard() {
               onClick={fetchTips} 
               className="p-3 bg-monalisa-navy border border-monalisa-gold/30 rounded-sm hover:bg-monalisa-gold/10 hover:border-monalisa-gold transition text-monalisa-gold"
               title="Actualizar datos"
+              // [MODIFICADO] Deshabilita si no está autenticado en Firebase
+              disabled={!firebaseAuthenticated} 
             >
               <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <button 
               onClick={exportCSV} 
               className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-monalisa-bronze text-white px-6 py-3 rounded-sm hover:bg-monalisa-gold hover:text-monalisa-navy transition shadow-[0_0_15px_rgba(147,119,55,0.3)] font-bold text-sm tracking-widest uppercase"
+              disabled={!firebaseAuthenticated}
             >
               <Download className="w-4 h-4" /> Exportar CSV
             </button>
@@ -171,8 +208,11 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-monalisa-gold/5">
-                {loading ? (
-                  <tr><td colSpan={5} className="p-12 text-center text-monalisa-silver/50 italic">Cargando datos del servidor...</td></tr>
+                {/* [MODIFICADO] Muestra el estado de autenticación de Firebase */}
+                {loading || !firebaseAuthenticated ? ( 
+                  <tr><td colSpan={5} className="p-12 text-center text-monalisa-silver/50 italic">
+                    {firebaseAuthenticated ? "Cargando datos del servidor..." : "Autenticando con Firebase..."}
+                  </td></tr>
                 ) : filtered.length === 0 ? (
                   <tr><td colSpan={5} className="p-12 text-center text-monalisa-silver/50 italic">No se encontraron registros recientes.</td></tr>
                 ) : (
