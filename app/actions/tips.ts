@@ -2,6 +2,8 @@
 
 import { TipRecord } from "@/types";
 import { getDbPool } from "@/lib/db";
+// [CORRECCIÓN CLAVE]: Importar RowDataPacket para el tipado correcto de consultas SELECT
+import { RowDataPacket } from 'mysql2/promise'; 
 
 /**
  * Guarda un registro de propina en la base de datos MySQL.
@@ -41,18 +43,23 @@ export async function fetchAllTips(): Promise<TipRecord[]> {
     try {
         const pool = await getDbPool();
         
-        // Consulta todos los registros, ordenados por fecha de creación descendente
-        const [rows] = await pool.query<TipRecord[]>(
+        // [CORRECCIÓN APLICADA]: Se usa RowDataPacket[] para evitar el error de compilación.
+        const [rows] = await pool.query<RowDataPacket[]>(
           `SELECT id, tableNumber, waiterName, tipPercentage, userAgent, createdAt 
            FROM tips 
            ORDER BY createdAt DESC`
         );
 
-        // Mapeamos los resultados para asegurar el tipo correcto para el frontend
-        return (rows as any[]).map(tip => ({
-            ...tip,
-            id: tip.id?.toString() || '', // Asegura que el ID es un string
-            synced: true, // Siempre true, ya que está en el almacenamiento principal
+        // Mapeamos los resultados (que ahora son RowDataPacket[]) a TipRecord[]
+        return (rows as RowDataPacket[]).map(tip => ({
+            // Aseguramos que todos los campos sean del tipo correcto para el frontend
+            id: tip.id?.toString() || '', 
+            tableNumber: tip.tableNumber.toString(), 
+            waiterName: tip.waiterName,
+            tipPercentage: tip.tipPercentage,
+            userAgent: tip.userAgent,
+            createdAt: tip.createdAt.toString(),
+            synced: true,
         })) as TipRecord[];
         
     } catch (error) {

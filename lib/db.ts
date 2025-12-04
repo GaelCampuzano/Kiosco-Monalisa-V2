@@ -3,7 +3,6 @@ import mysql, { Pool } from 'mysql2/promise';
 let pool: Pool;
 
 // Configuración de la base de datos a partir de variables de entorno
-// Asegúrate de que DB_HOST, DB_USER, DB_PASSWORD y DB_NAME estén en tu .env.local
 const dbConfig = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -51,6 +50,7 @@ export async function getDbPool() {
     
   } catch (error) {
     console.error('Error establishing connection or verifying table in MySQL:', error);
+    // Vuelve a lanzar el error para detener el proceso si la conexión/tabla falla
     throw error; 
   }
 
