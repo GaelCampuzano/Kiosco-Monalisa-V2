@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useActionState } from "react";
 import { login } from "@/app/actions/auth";
 import { ArrowLeft, Lock, User, RefreshCw } from "lucide-react"; 
@@ -12,6 +13,30 @@ const initialState = {
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(login, initialState);
+  const [logoError, setLogoError] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+
+  useEffect(() => {
+    setIsOffline(!navigator.onLine);
+    
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Resetear error de logo cuando vuelve la conexión
+  useEffect(() => {
+    if (!isOffline) {
+      setLogoError(false);
+    }
+  }, [isOffline]);
 
   return (
     <div className="min-h-screen bg-monalisa-navy flex items-center justify-center p-6 relative overflow-hidden selection:bg-monalisa-gold selection:text-monalisa-navy">
@@ -39,13 +64,20 @@ export default function LoginPage() {
                
                {/* Logo */}
                <div className="relative w-64 h-28">
-                <Image
-                  src="/logo-monalisa.svg"
-                  alt="Sunset Monalisa Logo"
-                  fill
-                  className="object-contain"
-                  priority
-                />
+                {!isOffline && !logoError ? (
+                  <Image
+                    src="/logo-monalisa.svg"
+                    alt="Sunset Monalisa Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                    onError={() => setLogoError(true)}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <span className="text-monalisa-gold text-2xl font-serif">Sunset Monalisa</span>
+                  </div>
+                )}
               </div>
             </div>
 

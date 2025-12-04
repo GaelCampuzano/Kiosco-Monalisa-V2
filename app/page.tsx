@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import confetti from "canvas-confetti";
 // CORRECCIÓN: Cambiar alias a ruta relativa para resolver el problema de Turbopack
 import { useTips } from "../hooks/useTips"; 
 import { TipPercentage, KioskStep } from "@/types";
@@ -22,31 +21,99 @@ export default function Kiosk() {
   const [step, setStep] = useState<KioskStep>("WAITER_INPUT");
   const [waiterName, setWaiterName] = useState("");
   const [tableNumber, setTableNumber] = useState("");
+  const [imageError, setImageError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+  const [shouldLoadImages, setShouldLoadImages] = useState(true);
+
+  // Verificar estado de red al montar y cuando cambia
+  useEffect(() => {
+    // Verificar estado inicial
+    const checkOnline = () => {
+      const online = navigator.onLine;
+      setShouldLoadImages(online);
+      if (online) {
+        setImageError(false);
+        setLogoError(false);
+      }
+    };
+    
+    checkOnline();
+    
+    const handleOnline = () => {
+      setShouldLoadImages(true);
+      setImageError(false);
+      setLogoError(false);
+    };
+    
+    const handleOffline = () => {
+      setShouldLoadImages(false);
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Lógica de Wake Lock
   useEffect(() => {
     let wakeLock: WakeLockSentinel | null = null;
+    
     const requestWakeLock = async () => {
+      // Solo solicitar WakeLock si la página está visible y el API está disponible
+      if (!('wakeLock' in navigator)) {
+        return; // WakeLock no está disponible en este navegador
+      }
+      
+      // Verificar que la página esté visible antes de solicitar
+      if (document.visibilityState !== 'visible') {
+        return; // No solicitar si la página no está visible
+      }
+      
       try {
-        if ('wakeLock' in navigator) {
-          wakeLock = await navigator.wakeLock.request('screen');
+        // Si ya hay un wakeLock activo, liberarlo primero
+        if (wakeLock) {
+          await wakeLock.release();
+          wakeLock = null;
         }
-      } catch (err) {
-        console.error('Error Wake Lock:', err);
+        
+        wakeLock = await navigator.wakeLock.request('screen');
+      } catch (err: any) {
+        // Ignorar errores comunes de WakeLock (página no visible, permisos, etc.)
+        // Solo loguear si es un error inesperado
+        if (err.name !== 'NotAllowedError' && err.name !== 'NotSupportedError') {
+          console.warn('Wake Lock error:', err);
+        }
       }
     };
     
-    requestWakeLock();
+    // Solicitar WakeLock solo si la página está visible
+    if (document.visibilityState === 'visible') {
+      requestWakeLock();
+    }
     
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') requestWakeLock();
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+      } else {
+        // Liberar WakeLock cuando la página no está visible
+        if (wakeLock) {
+          wakeLock.release().catch(() => {});
+          wakeLock = null;
+        }
+      }
     };
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
     // Cleanup function
     return () => {
-      if (wakeLock) wakeLock.release();
+      if (wakeLock) {
+        wakeLock.release().catch(() => {});
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
@@ -91,34 +158,13 @@ export default function Kiosk() {
     if (waiterName && tableNumber) setStep("CLIENT_SELECTION");
   };
 
-  const triggerConfetti = () => {
-    const duration = 3000;
-    const end = Date.now() + duration;
-
-    (function frame() {
-      confetti({
-        particleCount: 3,
-        angle: 60,
-        spread: 55,
-        origin: { x: 0 },
-        colors: ['#DFC894', '#FFFFFF', '#937737']
-      });
-      confetti({
-        particleCount: 3,
-        angle: 120,
-        spread: 55,
-        origin: { x: 1 },
-        colors: ['#DFC894', '#FFFFFF', '#937737']
-      });
-
-      if (Date.now() < end) {
-        requestAnimationFrame(frame);
-      }
-    }());
-  };
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const handleTipSelection = async (percentage: TipPercentage) => {
-    triggerConfetti();
+    // Mostrar animación elegante
+    setShowSuccessAnimation(true);
+    setTimeout(() => setShowSuccessAnimation(false), 2000);
+    
     await saveTip({ waiterName, tableNumber, tipPercentage: percentage });
     setStep("THANK_YOU");
     
@@ -133,14 +179,23 @@ export default function Kiosk() {
       
       {/* --- FONDO --- */}
       <div className="absolute inset-0 w-full h-full -z-20">
-        <Image
-          src="/bkg.jpg"
-          alt="Fondo Sunset Monalisa"
-          fill
-          priority
-          className="object-cover"
-          quality={100}
-        />
+        {/* Fallback de fondo siempre presente */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#162B46] via-[#1a3450] to-[#162B46]" />
+        
+        {/* Intentar cargar imagen si debería cargarse y no hay error */}
+        {shouldLoadImages && !imageError && (
+          <Image
+            src="/bkg.jpg"
+            alt="Fondo Sunset Monalisa"
+            fill
+            priority
+            className="object-cover"
+            onError={() => setImageError(true)}
+            onLoad={() => setImageError(false)}
+          />
+        )}
+        
+        {/* Overlays decorativos */}
         <div className="absolute inset-0 bg-[#162B46]/60 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#162B46] via-transparent to-[#162B46]/30" />
       </div>
@@ -157,6 +212,85 @@ export default function Kiosk() {
       <Link href="/admin" className="fixed bottom-8 right-8 z-30 opacity-30 hover:opacity-100 transition-opacity p-2 text-white">
         <Shield className="w-5 h-5" />
       </Link>
+
+      {/* Animación de éxito elegante */}
+      <AnimatePresence>
+        {showSuccessAnimation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 pointer-events-none flex items-center justify-center"
+          >
+            {/* Ondas concéntricas suaves */}
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                initial={{ scale: 0.8, opacity: 0.6 }}
+                animate={{ 
+                  scale: [0.8, 2.5, 2.8],
+                  opacity: [0.6, 0.3, 0]
+                }}
+                transition={{
+                  duration: 1.5,
+                  delay: i * 0.2,
+                  ease: "easeOut"
+                }}
+                className="absolute w-64 h-64 rounded-full border-2 border-monalisa-gold/40"
+                style={{
+                  background: `radial-gradient(circle, rgba(223,200,148,${0.2 - i * 0.05}) 0%, transparent 70%)`
+                }}
+              />
+            ))}
+            
+            {/* Partículas flotantes sutiles */}
+            {[...Array(8)].map((_, i) => {
+              const angle = (i * 360) / 8;
+              const radius = 120;
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ 
+                    x: 0, 
+                    y: 0, 
+                    opacity: 0.8,
+                    scale: 0
+                  }}
+                  animate={{ 
+                    x: Math.cos((angle * Math.PI) / 180) * radius,
+                    y: Math.sin((angle * Math.PI) / 180) * radius,
+                    opacity: [0.8, 0.4, 0],
+                    scale: [0, 1, 0.5]
+                  }}
+                  transition={{
+                    duration: 1.2,
+                    delay: 0.1,
+                    ease: "easeOut"
+                  }}
+                  className="absolute w-2 h-2 rounded-full bg-monalisa-gold/60"
+                />
+              );
+            })}
+            
+            {/* Brillo central suave */}
+            <motion.div
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ 
+                scale: [0, 1.2, 1],
+                opacity: [0, 0.6, 0]
+              }}
+              transition={{
+                duration: 1,
+                ease: "easeOut"
+              }}
+              className="absolute w-32 h-32 rounded-full blur-xl"
+              style={{
+                background: 'radial-gradient(circle, rgba(223,200,148,0.3) 0%, transparent 70%)'
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* --- CONTENIDO PRINCIPAL --- */}
       <div className="relative z-10 w-full max-w-5xl flex flex-col items-center justify-center min-h-[60vh]">
@@ -180,13 +314,23 @@ export default function Kiosk() {
                   
                   {/* Logo encima */}
                   <div className="relative w-64 h-28">
-                    <Image 
-                      src="/logo-monalisa.svg" 
-                      alt="Logo Sunset Monalisa" 
-                      fill 
-                      className="object-contain" 
-                      priority
-                    />
+                    {shouldLoadImages && !logoError ? (
+                      <Image 
+                        src="/logo-monalisa.svg" 
+                        alt="Logo Sunset Monalisa" 
+                        fill 
+                        className="object-contain" 
+                        priority
+                        onError={() => setLogoError(true)}
+                        onLoad={() => setLogoError(false)}
+                      />
+                    ) : null}
+                    {/* Fallback del logo siempre presente */}
+                    {(!shouldLoadImages || logoError) && (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <span className="text-monalisa-gold text-2xl font-serif">Sunset Monalisa</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
