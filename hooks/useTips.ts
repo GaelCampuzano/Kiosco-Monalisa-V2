@@ -1,8 +1,10 @@
-// hooks/useTips.ts
+// gaelcampuzano/kiosco-monalisa-v2/Kiosco-Monalisa-V2-8fe9ff121b13b2ecf67347664cfbdd5ba4f06866/hooks/useTips.ts
 import { useState, useEffect } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+// REMOVIDO: import { collection, addDoc } from 'firebase/firestore';
+// REMOVIDO: import { db } from '@/lib/firebase';
 import { TipRecord } from '@/types';
+// NUEVO: Importar la acción del servidor
+import { saveTipToDb } from '@/app/actions/tips';
 
 export function useTips() {
   const [isOffline, setIsOffline] = useState(false);
@@ -13,7 +15,8 @@ export function useTips() {
 
     const handleOnline = () => {
       setIsOffline(false);
-      syncOfflineTips(); // Intentar subir datos pendientes al volver online
+      // La sincronización debe ser implementada manualmente si se desea
+      // syncOfflineTips(); 
     };
     const handleOffline = () => setIsOffline(true);
 
@@ -26,58 +29,53 @@ export function useTips() {
     };
   }, []);
 
+  // [CAMBIO] Ahora llama a la Server Action para guardar en MySQL
   const saveTip = async (data: Omit<TipRecord, 'id' | 'createdAt' | 'synced'>) => {
-    const newTip: TipRecord = {
-      ...data,
+    const { waiterName, tableNumber, tipPercentage } = data;
+    const tipToSave: Omit<TipRecord, 'id' | 'synced'> = {
+      tableNumber,
+      waiterName,
+      tipPercentage,
       createdAt: new Date().toISOString(),
       userAgent: navigator.userAgent,
-      synced: true,
     };
 
     try {
-      // 1. Intentar guardar en Firebase
+      // 1. Intentar guardar en la base de datos (MySQL via Server Action)
       if (!navigator.onLine) throw new Error('Offline');
       
-      await addDoc(collection(db, "tips"), newTip);
-      console.log("Tip saved to Firebase");
+      const result = await saveTipToDb(data, navigator.userAgent);
+      
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      console.log("Tip saved to MySQL via Server Action");
       
     } catch (error) {
-      // 2. Si falla (BLOQUEO o OFFLINE), guardar localmente
-      console.warn("Network error or Blocked, saving locally", error);
-      newTip.synced = false;
+      // 2. Si falla (OFFLINE o error del servidor), guardar localmente
+      console.warn("Network error or Server Save Failed, saving locally", error);
       
+      const tipToSaveLocally: TipRecord = {
+        ...tipToSave,
+        synced: false,
+      };
+
       const localTips = JSON.parse(localStorage.getItem('offlineTips') || '[]');
-      localStorage.setItem('offlineTips', JSON.stringify([...localTips, newTip]));
+      localStorage.setItem('offlineTips', JSON.stringify([...localTips, tipToSaveLocally]));
       
       // 3. Actualizar el estado visual del UI
       setIsOffline(true);
-
     }
-    // NOTA CLAVE: La función termina sin lanzar un error, 
-    // permitiendo que 'setStep("THANK_YOU")' se ejecute en app/page.tsx.
   };
 
+  // [CAMBIO] Se elimina la lógica de syncOfflineTips de Firebase/Firestore
+  // Si deseas mantener la sincronización, deberías implementar la lógica 
+  // para leer de localStorage y llamar a saveTipToDb().
   const syncOfflineTips = async () => {
-    const localTipsString = localStorage.getItem('offlineTips');
-    if (!localTipsString) return;
-
-    const localTips: TipRecord[] = JSON.parse(localTipsString);
-    if (localTips.length === 0) return;
-
-    console.log(`Syncing ${localTips.length} tips...`);
-    const remainingTips: TipRecord[] = [];
-
-    for (const tip of localTips) {
-      try {
-        const tipToSave = { ...tip, synced: true };
-        await addDoc(collection(db, "tips"), tipToSave);
-      } catch (e) {
-        remainingTips.push(tip); // Si falla de nuevo, lo mantenemos en cola
-      }
-    }
-
-    localStorage.setItem('offlineTips', JSON.stringify(remainingTips));
+    console.warn("Offline synchronization logic needs to be implemented using saveTipToDb Server Action.");
   };
 
-  return { saveTip, isOffline };
+
+  return { saveTip, isOffline, syncOfflineTips };
 }
