@@ -31,10 +31,24 @@ export default function LoginPage() {
     };
   }, []);
 
-  // Resetear error de logo cuando vuelve la conexión
+  // Pre-cargar y cachear logo cuando esté online
   useEffect(() => {
-    if (!isOffline) {
-      setLogoError(false);
+    if (!isOffline && typeof window !== "undefined" && "caches" in window) {
+      const cacheLogo = async () => {
+        try {
+          const cache = await caches.open("monalisa-images-v1");
+          const cached = await cache.match("/logo-monalisa.svg");
+          if (!cached) {
+            const response = await fetch("/logo-monalisa.svg", { cache: "force-cache" });
+            if (response.ok) {
+              await cache.put("/logo-monalisa.svg", response);
+            }
+          }
+        } catch {
+          // Silenciar errores
+        }
+      };
+      cacheLogo();
     }
   }, [isOffline]);
 
@@ -64,13 +78,14 @@ export default function LoginPage() {
                
                {/* Logo */}
                <div className="relative w-64 h-28">
-                {!isOffline && !logoError ? (
+                {/* Lógica modificada: solo comprueba logoError */}
+                {!logoError ? (
                   <Image
                     src="/logo-monalisa.svg"
                     alt="Sunset Monalisa Logo"
                     fill
-                    className="object-contain"
                     priority
+                    className="object-contain"
                     onError={() => setLogoError(true)}
                   />
                 ) : (

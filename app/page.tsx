@@ -23,41 +23,35 @@ export default function Kiosk() {
   const [tableNumber, setTableNumber] = useState("");
   const [imageError, setImageError] = useState(false);
   const [logoError, setLogoError] = useState(false);
-  const [shouldLoadImages, setShouldLoadImages] = useState(true);
-
-  // Verificar estado de red al montar y cuando cambia
+  
+  // Pre-cargar y cachear imágenes cuando esté online
   useEffect(() => {
-    // Verificar estado inicial
-    const checkOnline = () => {
-      const online = navigator.onLine;
-      setShouldLoadImages(online);
-      if (online) {
-        setImageError(false);
-        setLogoError(false);
-      }
-    };
-    
-    checkOnline();
-    
-    const handleOnline = () => {
-      setShouldLoadImages(true);
-      setImageError(false);
-      setLogoError(false);
-    };
-    
-    const handleOffline = () => {
-      setShouldLoadImages(false);
-    };
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
-
+    if (!isOffline && typeof window !== "undefined" && "caches" in window) {
+      const cacheImages = async () => {
+        try {
+          const cache = await caches.open("monalisa-images-v1");
+          const imagesToCache = ["/bkg.jpg", "/logo-monalisa.svg"];
+          
+          // Cachear imágenes que aún no están en caché
+          await Promise.allSettled(
+            imagesToCache.map(async (url) => {
+              const cached = await cache.match(url);
+              if (!cached) {
+                const response = await fetch(url, { cache: "force-cache" });
+                if (response.ok) {
+                  await cache.put(url, response);
+                }
+              }
+            })
+          );
+        } catch {
+          // Silenciar errores de caché
+        }
+      };
+      cacheImages();
+    }
+  }, [isOffline]);
+  
   // Lógica de Wake Lock
   useEffect(() => {
     let wakeLock: WakeLockSentinel | null = null;
@@ -182,8 +176,8 @@ export default function Kiosk() {
         {/* Fallback de fondo siempre presente */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#162B46] via-[#1a3450] to-[#162B46]" />
         
-        {/* Intentar cargar imagen si debería cargarse y no hay error */}
-        {shouldLoadImages && !imageError && (
+        {/* Intentar cargar imagen siempre */}
+        {!imageError && (
           <Image
             src="/bkg.jpg"
             alt="Fondo Sunset Monalisa"
@@ -314,19 +308,20 @@ export default function Kiosk() {
                   
                   {/* Logo encima */}
                   <div className="relative w-64 h-28">
-                    {shouldLoadImages && !logoError ? (
+                    {/* Renderiza el logo si NO hay error de carga */}
+                    {!logoError ? (
                       <Image 
                         src="/logo-monalisa.svg" 
                         alt="Logo Sunset Monalisa" 
                         fill 
-                        className="object-contain" 
                         priority
+                        className="object-contain" 
                         onError={() => setLogoError(true)}
                         onLoad={() => setLogoError(false)}
                       />
                     ) : null}
-                    {/* Fallback del logo siempre presente */}
-                    {(!shouldLoadImages || logoError) && (
+                    {/* Fallback del logo solo si hay error de carga */}
+                    {logoError && (
                       <div className="w-full h-full flex items-center justify-center">
                         <span className="text-monalisa-gold text-2xl font-serif">Sunset Monalisa</span>
                       </div>
