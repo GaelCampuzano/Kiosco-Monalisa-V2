@@ -53,18 +53,18 @@ export default function LoginPage() {
   }, [isOffline]);
 
   return (
-    <div className="min-h-screen bg-monalisa-navy flex items-center justify-center p-6 relative overflow-hidden selection:bg-monalisa-gold selection:text-monalisa-navy">
+    <div className="min-h-screen bg-monalisa-navy flex items-center justify-center p-4 sm:p-6 relative overflow-hidden selection:bg-monalisa-gold selection:text-monalisa-navy">
       {/* Fondo decorativo sutil */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#1f3a5e] via-monalisa-navy to-[#0a1525] -z-10" />
 
       <div className="w-full max-w-md">
         {/* Botón Volver al Kiosco */}
-        <Link href="/" className="group flex items-center gap-2 text-monalisa-silver/50 hover:text-monalisa-gold transition-colors mb-8 text-xs font-bold tracking-widest uppercase w-fit">
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Regresar al Kiosco
+        <Link href="/" className="group flex items-center gap-2 text-monalisa-silver/50 hover:text-monalisa-gold transition-colors mb-6 sm:mb-8 text-[10px] sm:text-xs font-bold tracking-widest uppercase w-fit">
+          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform" /> Regresar al Kiosco
         </Link>
 
         {/* Tarjeta de Login */}
-        <div className="bg-monalisa-navy/50 backdrop-blur-xl border border-monalisa-gold/20 p-8 md:p-12 rounded-sm shadow-2xl relative overflow-hidden">
+        <div className="bg-monalisa-navy/50 backdrop-blur-xl border border-monalisa-gold/20 p-6 sm:p-8 md:p-12 rounded-sm shadow-2xl relative overflow-hidden">
           
           {/* Brillo superior decorativo */}
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-monalisa-gold/50 to-transparent opacity-50" />
@@ -72,12 +72,12 @@ export default function LoginPage() {
           <div className="text-center mb-10">
             
             {/* LOGO CON SPOTLIGHT EN LOGIN */}
-            <div className="relative w-full h-32 mx-auto mb-6 flex items-center justify-center hover:scale-105 transition-transform duration-500">
+            <div className="relative w-full h-24 sm:h-32 mx-auto mb-4 sm:mb-6 flex items-center justify-center hover:scale-105 transition-transform duration-500">
                {/* Luz de fondo difusa */}
                <div className="absolute inset-0 bg-[radial-gradient(closest-side,rgba(255,255,255,0.8)_20%,transparent_100%)] blur-xl" />
                
                {/* Logo */}
-               <div className="relative w-64 h-28">
+               <div className="relative w-48 h-20 sm:w-64 sm:h-28">
                 {/* Lógica modificada: solo comprueba logoError */}
                 {!logoError ? (
                   <Image
@@ -90,17 +90,17 @@ export default function LoginPage() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-monalisa-gold text-2xl font-serif">Sunset Monalisa</span>
+                    <span className="text-monalisa-gold text-xl sm:text-2xl font-serif">Sunset Monalisa</span>
                   </div>
                 )}
               </div>
             </div>
 
-            <h1 className="font-serif text-3xl text-white mb-2 tracking-wide">Acceso Administrativo</h1>
-            <p className="text-monalisa-silver/60 text-sm font-light">Sistema de Gestión Sunset Monalisa</p>
+            <h1 className="font-serif text-2xl sm:text-3xl text-white mb-2 tracking-wide">Acceso Administrativo</h1>
+            <p className="text-monalisa-silver/60 text-xs sm:text-sm font-light">Sistema de Gestión Sunset Monalisa</p>
           </div>
 
-          <form action={formAction} className="space-y-6">
+          <form action={formAction} className="space-y-4 sm:space-y-6">
             {/* Input Usuario */}
             <div className="space-y-2 group">
               <label className="text-xs font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">Usuario</label>

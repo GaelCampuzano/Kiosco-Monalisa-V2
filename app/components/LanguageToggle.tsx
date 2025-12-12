@@ -10,12 +10,12 @@ interface LanguageToggleProps {
 
 export function LanguageToggle({ lang, setLang }: LanguageToggleProps) {
   return (
-    <div className="absolute top-8 left-8 z-30 flex gap-4">
+    <div className="absolute top-4 left-4 sm:top-8 sm:left-8 z-30 flex gap-2 sm:gap-4">
       {["es", "en"].map((l) => (
         <button 
           key={l}
           onClick={() => setLang(l as Language)} 
-          className={`text-xs font-bold tracking-[0.2em] uppercase transition-all duration-300 ${
+          className={`text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase transition-all duration-300 px-2 py-1 ${
             lang === l 
               ? 'text-monalisa-gold border-b border-monalisa-gold pb-1' 
               : 'text-white/60 hover:text-white'

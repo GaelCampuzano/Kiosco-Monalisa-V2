@@ -169,7 +169,7 @@ export default function Kiosk() {
   };
 
   return (
-    <main className="min-h-screen text-monalisa-silver flex flex-col items-center justify-center p-6 relative overflow-hidden font-sans">
+    <main className="min-h-screen text-monalisa-silver flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
       
       {/* --- FONDO --- */}
       <div className="absolute inset-0 w-full h-full -z-20">
@@ -203,8 +203,8 @@ export default function Kiosk() {
       <StatusIndicator isOffline={isOffline} text={text} />
 
       {/* Botón de Admin */}
-      <Link href="/admin" className="fixed bottom-8 right-8 z-30 opacity-30 hover:opacity-100 transition-opacity p-2 text-white">
-        <Shield className="w-5 h-5" />
+      <Link href="/admin" className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-30 opacity-30 hover:opacity-100 transition-opacity p-2 text-white">
+        <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
       </Link>
 
       {/* Animación de éxito elegante */}
@@ -287,7 +287,7 @@ export default function Kiosk() {
       </AnimatePresence>
 
       {/* --- CONTENIDO PRINCIPAL --- */}
-      <div className="relative z-10 w-full max-w-5xl flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="relative z-10 w-full max-w-5xl flex flex-col items-center justify-center min-h-[60vh] px-2 sm:px-4">
         <AnimatePresence mode="wait">
           
           {/* PASO 1: MESERO */}
@@ -297,17 +297,17 @@ export default function Kiosk() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="w-full max-w-md bg-[#162B46]/40 backdrop-blur-xl border border-white/10 p-8 md:p-12 rounded-sm shadow-2xl"
+              className="w-full max-w-md bg-[#162B46]/40 backdrop-blur-xl border border-white/10 p-6 sm:p-8 md:p-12 rounded-sm shadow-2xl"
             >
-              <div className="text-center mb-8">
+              <div className="text-center mb-6 sm:mb-8">
                 
                 {/* LOGO CON EFECTO SPOTLIGHT (LUZ RADIAL) */}
-                <div className="relative w-full h-32 mx-auto mb-6 flex items-center justify-center">
+                <div className="relative w-full h-24 sm:h-32 mx-auto mb-4 sm:mb-6 flex items-center justify-center">
                   {/* Capa de luz de fondo difusa */}
                   <div className="absolute inset-0 bg-[radial-gradient(closest-side,rgba(255,255,255,0.8)_20%,transparent_100%)] blur-xl" />
                   
                   {/* Logo encima */}
-                  <div className="relative w-64 h-28">
+                  <div className="relative w-48 h-20 sm:w-64 sm:h-28">
                     {/* Renderiza el logo si NO hay error de carga */}
                     {!logoError ? (
                       <Image 
@@ -323,18 +323,18 @@ export default function Kiosk() {
                     {/* Fallback del logo solo si hay error de carga */}
                     {logoError && (
                       <div className="w-full h-full flex items-center justify-center">
-                        <span className="text-monalisa-gold text-2xl font-serif">Sunset Monalisa</span>
+                        <span className="text-monalisa-gold text-xl sm:text-2xl font-serif">Sunset Monalisa</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <h1 className="font-serif text-3xl text-white tracking-wide drop-shadow-sm border-t border-white/10 pt-6">
+                <h1 className="font-serif text-2xl sm:text-3xl text-white tracking-wide drop-shadow-sm border-t border-white/10 pt-4 sm:pt-6">
                   {text.waiterTitle}
                 </h1>
               </div>
               
-              <form onSubmit={handleWaiterSubmit} className="space-y-8">
+              <form onSubmit={handleWaiterSubmit} className="space-y-6 sm:space-y-8">
                 <div className="group">
                   <label className="block text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest mb-2 ml-1">{text.table}</label>
                   <input
@@ -342,9 +342,15 @@ export default function Kiosk() {
                     type="text" 
                     required
                     value={tableNumber}
-                    // FILTRO: Mantiene solo dígitos (0-9).
-                    onChange={(e) => setTableNumber(e.target.value.replace(/[^0-9]/g, ''))}
-                    className="w-full bg-black/20 border border-white/10 focus:border-monalisa-gold rounded-sm text-white text-2xl py-3 px-4 outline-none transition-all font-serif placeholder:text-white/10 text-center"
+                    maxLength={3}
+                    // FILTRO: Mantiene solo dígitos (0-9) y limita a 3 dígitos máximo.
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      if (value.length <= 3) {
+                        setTableNumber(value);
+                      }
+                    }}
+                    className="w-full bg-black/20 border border-white/10 focus:border-monalisa-gold rounded-sm text-white text-xl sm:text-2xl py-2.5 sm:py-3 px-4 outline-none transition-all font-serif placeholder:text-white/10 text-center"
                     placeholder="#"
                   />
                 </div>
@@ -358,14 +364,14 @@ export default function Kiosk() {
                     onChange={(e) => {
                       if (!/[0-9]/.test(e.target.value)) setWaiterName(e.target.value);
                     }}
-                    className="w-full bg-black/20 border border-white/10 focus:border-monalisa-gold rounded-sm text-white text-xl py-3 px-4 outline-none transition-all font-serif placeholder:text-white/10 text-center"
+                    className="w-full bg-black/20 border border-white/10 focus:border-monalisa-gold rounded-sm text-white text-lg sm:text-xl py-2.5 sm:py-3 px-4 outline-none transition-all font-serif placeholder:text-white/10 text-center"
                     placeholder={text.waiterPlaceholder}
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full mt-6 bg-monalisa-bronze text-white py-4 px-6 rounded-sm font-bold tracking-[0.15em] uppercase text-xs hover:bg-monalisa-gold hover:text-monalisa-navy transition-all duration-300 shadow-lg hover:shadow-monalisa-gold/20"
+                  className="w-full mt-4 sm:mt-6 bg-monalisa-bronze text-white py-3 sm:py-4 px-6 rounded-sm font-bold tracking-[0.15em] uppercase text-xs hover:bg-monalisa-gold hover:text-monalisa-navy transition-all duration-300 shadow-lg hover:shadow-monalisa-gold/20"
                 >
                   {text.btnDeliver}
                 </button>
@@ -382,35 +388,35 @@ export default function Kiosk() {
               exit={{ opacity: 0, scale: 1.05 }}
               className="w-full text-center"
             >
-              <div className="inline-block bg-[#162B46]/30 backdrop-blur-sm px-8 py-4 rounded-full mb-10 border border-white/5">
-                <h2 className="font-serif text-4xl md:text-6xl text-white drop-shadow-md mb-2">
+              <div className="inline-block bg-[#162B46]/30 backdrop-blur-sm px-4 sm:px-6 md:px-8 py-3 sm:py-4 rounded-full mb-6 sm:mb-8 md:mb-10 border border-white/5 max-w-[95%] sm:max-w-none">
+                <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-6xl text-white drop-shadow-md mb-2 leading-tight">
                   {text.clientTitle}
                 </h2>
-                <p className="text-monalisa-gold text-lg font-light tracking-wide">
-                  {text.selectTip} <span className="font-serif italic font-medium text-white border-b border-monalisa-gold/50 px-1">{waiterName}</span>
+                <p className="text-monalisa-gold text-sm sm:text-base md:text-lg font-light tracking-wide px-2">
+                  {text.selectTip} <span className="font-serif italic font-medium text-white border-b border-monalisa-gold/50 px-1 break-words">{waiterName}</span>
                 </p>
               </div>
 
               {/* MEJORA RESPONSIVA: grid-cols-1 en móvil, grid-cols-3 en md (horizontal) */}
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-10 px-4 max-w-5xl mx-auto">
+              <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3 md:gap-10 px-2 sm:px-4 max-w-5xl mx-auto">
                 {[20, 23, 25].map((pct) => (
                   <motion.button
                     key={pct}
                     onClick={() => handleTipSelection(pct as TipPercentage)}
                     whileTap={{ scale: 0.95 }} 
                     whileHover={{ scale: 1.05 }}
-                    className="group relative flex flex-col items-center justify-center py-16 md:py-24 rounded-sm border border-white/10 hover:border-monalisa-gold bg-[#162B46]/60 backdrop-blur-md transition-all duration-500 hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] cursor-pointer"
+                    className="group relative flex flex-col items-center justify-center py-10 sm:py-12 md:py-16 lg:py-24 rounded-sm border border-white/10 hover:border-monalisa-gold bg-[#162B46]/60 backdrop-blur-md transition-all duration-500 hover:shadow-[0_15px_40px_rgba(0,0,0,0.4)] cursor-pointer min-h-[140px] sm:min-h-[160px]"
                   >
                     <div className="absolute inset-0 bg-gradient-to-b from-monalisa-gold/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     
-                    <span className="font-serif text-6xl md:text-8xl text-white group-hover:text-monalisa-gold transition-colors duration-300 drop-shadow-lg">
-                      {pct}<span className="text-4xl align-top opacity-60">%</span>
+                    <span className="font-serif text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-white group-hover:text-monalisa-gold transition-colors duration-300 drop-shadow-lg">
+                      {pct}<span className="text-3xl sm:text-4xl align-top opacity-60">%</span>
                     </span>
                     
-                    <div className="flex items-center gap-2 mt-4 text-xs font-bold uppercase tracking-[0.25em] text-monalisa-bronze group-hover:text-monalisa-gold transition-colors drop-shadow-md">
-                      <div className="h-[1px] w-6 bg-current opacity-60" />
+                    <div className="flex items-center gap-2 mt-3 sm:mt-4 text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-monalisa-bronze group-hover:text-monalisa-gold transition-colors drop-shadow-md">
+                      <div className="h-[1px] w-4 sm:w-6 bg-current opacity-60" />
                       {text.tipLabel}
-                      <div className="h-[1px] w-6 bg-current opacity-60" />
+                      <div className="h-[1px] w-4 sm:w-6 bg-current opacity-60" />
                     </div>
                   </motion.button>
                 ))}
@@ -424,21 +430,21 @@ export default function Kiosk() {
               key="thanks"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center bg-[#162B46]/40 backdrop-blur-md p-12 rounded-sm border border-white/5 shadow-2xl"
+              className="text-center bg-[#162B46]/40 backdrop-blur-md p-6 sm:p-8 md:p-12 rounded-sm border border-white/5 shadow-2xl max-w-[95%] sm:max-w-none"
             >
               <motion.div
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ duration: 0.8, ease: "easeOut" }}
-                className="mb-8 relative"
+                className="mb-6 sm:mb-8 relative"
               >
-                <Star className="w-24 h-24 mx-auto text-monalisa-gold fill-monalisa-gold/20 animate-pulse drop-shadow-[0_0_30px_rgba(223,200,148,0.6)]" />
+                <Star className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto text-monalisa-gold fill-monalisa-gold/20 animate-pulse drop-shadow-[0_0_30px_rgba(223,200,148,0.6)]" />
               </motion.div>
               
-              <h1 className="font-serif text-5xl md:text-7xl text-white mb-6 drop-shadow-xl">
+              <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-7xl text-white mb-4 sm:mb-6 drop-shadow-xl leading-tight px-2">
                 {text.thanks}
               </h1>
-              <p className="text-monalisa-silver text-xl font-light tracking-wide">
+              <p className="text-monalisa-silver text-base sm:text-lg md:text-xl font-light tracking-wide px-2">
                 {text.bye}
               </p>
             </motion.div>

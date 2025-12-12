@@ -69,31 +69,64 @@ export default function AdminDashboard() {
   }, [fetchTips]);
 
   const exportCSV = () => {
-    // ... (función original del archivo)
+    if (filtered.length === 0) {
+      alert('No hay datos para exportar');
+      return;
+    }
+
+    // Crear encabezados CSV
+    const headers = ['Fecha', 'Mesa', 'Mesero', 'Propina (%)', 'User Agent'];
+    const rows = filtered.map(tip => [
+      new Date(tip.createdAt).toLocaleString(),
+      tip.tableNumber,
+      tip.waiterName,
+      tip.tipPercentage.toString(),
+      tip.userAgent || ''
+    ]);
+
+    // Combinar encabezados y filas
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Crear blob y descargar
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `propinas-monalisa-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  const filtered = tips.filter(t => t.waiterName.toLowerCase().includes(search.toLowerCase()));
+  const filtered = tips.filter(t => 
+    t.waiterName.toLowerCase().includes(search.toLowerCase()) ||
+    t.tableNumber.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-monalisa-navy text-monalisa-silver p-6 md:p-10 font-sans selection:bg-monalisa-gold selection:text-monalisa-navy">
+    <div className="min-h-screen bg-monalisa-navy text-monalisa-silver p-4 sm:p-6 md:p-10 font-sans selection:bg-monalisa-gold selection:text-monalisa-navy">
       {/* Fondo decorativo sutil */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-[#1f3a5e] via-monalisa-navy to-[#0a1525] -z-10 pointer-events-none" />
 
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header con Logout */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pb-6 border-b border-monalisa-gold/20">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-monalisa-gold/20">
           <div>
             <button 
               onClick={() => logout()} 
-              className="flex items-center gap-2 text-red-400/70 hover:text-red-400 transition-colors mb-4 text-xs font-bold tracking-widest uppercase"
+              className="flex items-center gap-2 text-red-400/70 hover:text-red-400 transition-colors mb-3 sm:mb-4 text-[10px] sm:text-xs font-bold tracking-widest uppercase"
             >
               <LogOut className="w-3 h-3" /> Cerrar Sesión
             </button>
-            <h1 className="text-4xl md:text-5xl font-serif font-bold text-monalisa-gold tracking-wide">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-monalisa-gold tracking-wide">
               Panel de Control
             </h1>
-            <p className="text-monalisa-silver/60 mt-2 text-lg font-light">Resumen de actividad Sunset Monalisa</p>
+            <p className="text-monalisa-silver/60 mt-1 sm:mt-2 text-sm sm:text-base md:text-lg font-light">Resumen de actividad Sunset Monalisa</p>
           </div>
           
           {/* Botones de Acción */}
@@ -118,18 +151,60 @@ export default function AdminDashboard() {
         </div>
 
         {/* KPIs - Tarjetas Elegantes */}
-        {/* ... (el resto de las KPIs y el JSX se mantiene igual) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+          <div className="bg-monalisa-navy/40 backdrop-blur-md border border-monalisa-gold/20 p-4 sm:p-6 rounded-sm shadow-xl hover:border-monalisa-gold/40 transition-all">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-monalisa-silver/60 text-xs sm:text-sm font-bold uppercase tracking-widest">Total Propinas</h3>
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-monalisa-gold/60" />
+            </div>
+            <p className="text-3xl sm:text-4xl font-serif font-bold text-monalisa-gold">{stats.totalTips}</p>
+            <p className="text-[10px] sm:text-xs text-monalisa-silver/40 mt-1 sm:mt-2">Registros totales</p>
+          </div>
+
+          <div className="bg-monalisa-navy/40 backdrop-blur-md border border-monalisa-gold/20 p-4 sm:p-6 rounded-sm shadow-xl hover:border-monalisa-gold/40 transition-all">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-monalisa-silver/60 text-xs sm:text-sm font-bold uppercase tracking-widest">Promedio</h3>
+              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-monalisa-gold/60" />
+            </div>
+            <p className="text-3xl sm:text-4xl font-serif font-bold text-monalisa-gold">{stats.avgPercentage}%</p>
+            <p className="text-[10px] sm:text-xs text-monalisa-silver/40 mt-1 sm:mt-2">Porcentaje promedio</p>
+          </div>
+
+          <div className="bg-monalisa-navy/40 backdrop-blur-md border border-monalisa-gold/20 p-4 sm:p-6 rounded-sm shadow-xl hover:border-monalisa-gold/40 transition-all sm:col-span-2 md:col-span-1">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h3 className="text-monalisa-silver/60 text-xs sm:text-sm font-bold uppercase tracking-widest">Mesero Top</h3>
+              <Users className="w-4 h-4 sm:w-5 sm:h-5 text-monalisa-gold/60" />
+            </div>
+            <p className="text-xl sm:text-2xl font-serif font-bold text-monalisa-gold truncate">{stats.topWaiter}</p>
+            <p className="text-[10px] sm:text-xs text-monalisa-silver/40 mt-1 sm:mt-2">Más activo</p>
+          </div>
+        </div>
         
         {/* Tabla y Filtros */}
         <div className="bg-monalisa-navy/30 backdrop-blur-md rounded-sm border border-monalisa-gold/10 overflow-hidden shadow-2xl">
-          <div className="p-6 border-b border-monalisa-gold/10 bg-monalisa-navy/50">
-          {/* ... (el input de búsqueda se mantiene igual) */}
+          <div className="p-4 sm:p-6 border-b border-monalisa-gold/10 bg-monalisa-navy/50">
+            <div className="relative">
+              <Search className="absolute left-3 sm:left-4 top-3 sm:top-3.5 w-4 h-4 sm:w-5 sm:h-5 text-monalisa-silver/30" />
+              <input
+                type="text"
+                placeholder="Buscar por mesero o mesa..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-monalisa-navy/50 border border-monalisa-gold/20 rounded-sm py-2 sm:py-3 pl-10 sm:pl-12 pr-3 sm:pr-4 text-sm sm:text-base text-white placeholder:text-monalisa-silver/20 focus:border-monalisa-gold outline-none transition-all font-light"
+              />
+            </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-monalisa-gold/5 border-b border-monalisa-gold/10">
-              {/* ... (el encabezado de la tabla se mantiene igual) */}
+                <tr>
+                  <th className="p-5 text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest">Fecha</th>
+                  <th className="p-5 text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest">Mesa</th>
+                  <th className="p-5 text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest">Mesero</th>
+                  <th className="p-5 text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest">Propina</th>
+                  <th className="p-5 text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest hidden lg:table-cell">Dispositivo</th>
+                </tr>
               </thead>
               <tbody className="divide-y divide-monalisa-gold/5">
                 {/* [CAMBIO] Muestra el estado de la base de datos */}
@@ -138,10 +213,13 @@ export default function AdminDashboard() {
                     {dbAuthenticated ? "Cargando datos del servidor..." : "Error de conexión/autenticación."}
                   </td></tr>
                 ) : filtered.length === 0 ? (
-                  <tr><td colSpan={5} className="p-12 text-center text-monalisa-silver/50 italic">No se encontraron registros recientes.</td></tr>
+                  <tr>
+                    <td colSpan={5} className="p-12 text-center text-monalisa-silver/50 italic">
+                      {search ? 'No se encontraron registros que coincidan con la búsqueda.' : 'No se encontraron registros recientes.'}
+                    </td>
+                  </tr>
                 ) : (
                   filtered.map((tip) => (
-                    // ... (las filas de datos se mantienen igual)
                     <tr key={tip.id} className="hover:bg-monalisa-gold/5 transition-colors group">
                       <td className="p-5 text-monalisa-silver font-light">{new Date(tip.createdAt).toLocaleString()}</td>
                       <td className="p-5">

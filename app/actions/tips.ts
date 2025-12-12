@@ -10,6 +10,23 @@ import { RowDataPacket } from 'mysql2/promise';
  */
 export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'synced' | 'userAgent'>, userAgent: string) {
   try {
+    // Validación básica de entrada
+    if (!data.tableNumber || !data.waiterName || !data.tipPercentage) {
+      return { success: false, error: 'Missing required fields' };
+    }
+
+    if (![20, 23, 25].includes(data.tipPercentage)) {
+      return { success: false, error: 'Invalid tip percentage' };
+    }
+
+    if (data.tableNumber.length > 50) {
+      return { success: false, error: 'Table number too long' };
+    }
+
+    if (data.waiterName.length > 255) {
+      return { success: false, error: 'Waiter name too long' };
+    }
+
     const pool = await getDbPool();
     
     // Ejecuta la inserción en MySQL
@@ -20,7 +37,7 @@ export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'sy
     
     const [result] = await pool.execute(
       query,
-      [data.tableNumber, data.waiterName, data.tipPercentage, userAgent]
+      [data.tableNumber.trim(), data.waiterName.trim(), data.tipPercentage, userAgent?.substring(0, 255) || '']
     );
 
     // Verifica que la inserción haya sido exitosa

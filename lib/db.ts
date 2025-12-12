@@ -3,15 +3,20 @@ import mysql, { Pool } from 'mysql2/promise';
 let pool: Pool;
 
 // Configuración de la base de datos a partir de variables de entorno
-const dbConfig = {
+const dbConfig: mysql.PoolOptions = {
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
   // Opciones recomendadas para un entorno de alto tráfico o Serverless:
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  // Configuración SSL para bases de datos en la nube
+  ssl: process.env.DB_SSL === 'true' ? {
+    rejectUnauthorized: true
+  } : undefined,
 };
 
 /**
@@ -42,11 +47,14 @@ export async function getDbPool() {
         tipPercentage INT NOT NULL,
         amount DECIMAL(10, 2),
         userAgent VARCHAR(255),
-        createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_created_at (createdAt),
+        INDEX idx_waiter_name (waiterName),
+        INDEX idx_table_number (tableNumber)
       );
     `);
     connection.release(); // Libera la conexión
-    console.log('MySQL table "tips" verified/created.');
+    console.log('MySQL table "tips" verified/created with indexes.');
     
   } catch (error) {
     console.error('Error establishing connection or verifying table in MySQL:', error);

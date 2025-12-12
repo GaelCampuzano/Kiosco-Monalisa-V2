@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"; //
 import { Playfair_Display, Lato } from "next/font/google";
 import "./globals.css";
+import { ServiceWorkerRegistration } from "./components/ServiceWorkerRegistration";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
@@ -42,6 +43,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${playfair.variable} ${lato.variable}`}>
       <body className="antialiased bg-[#162B46] text-[#B2B2B2]">
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>
