@@ -51,7 +51,6 @@ export function WaiterForm({
                                 src="/logo-monalisa.svg"
                                 alt="Logo Sunset Monalisa"
                                 fill
-                                priority
                                 className="object-contain"
                                 onError={() => setLogoError(true)}
                                 onLoad={() => setLogoError(false)}
