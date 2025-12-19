@@ -3,13 +3,11 @@ import React from 'react';
 import { Wifi, WifiOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { TranslationType } from "@/lib/translations";
+
 interface StatusIndicatorProps {
   isOffline: boolean;
-  text: {
-    online: string;
-    offline: string;
-    offlineMsg: string;
-  }
+  text: TranslationType;
 }
 
 export function StatusIndicator({ isOffline, text }: StatusIndicatorProps) {
@@ -17,11 +15,10 @@ export function StatusIndicator({ isOffline, text }: StatusIndicatorProps) {
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`absolute top-4 right-4 sm:top-8 sm:right-8 z-30 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg backdrop-blur-md border transition-all duration-500 ${
-        isOffline 
-          ? 'bg-amber-900/40 border-amber-500/30 text-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.2)]' 
+      className={`absolute top-4 right-4 sm:top-8 sm:right-8 z-30 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg backdrop-blur-md border transition-all duration-500 ${isOffline
+          ? 'bg-amber-900/40 border-amber-500/30 text-amber-100 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
           : 'bg-emerald-900/30 border-emerald-500/20 text-emerald-100/90 hover:bg-emerald-900/40'
-      }`}
+        }`}
     >
       <AnimatePresence mode="wait">
         {isOffline ? (
@@ -46,7 +43,7 @@ export function StatusIndicator({ isOffline, text }: StatusIndicatorProps) {
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       <div className="flex flex-col">
         <span className={`text-[10px] sm:text-xs font-bold tracking-widest uppercase ${isOffline ? 'text-amber-200' : 'text-emerald-200'}`}>
           {isOffline ? text.offline : text.online}
