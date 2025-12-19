@@ -1,5 +1,5 @@
 // Service Worker optimizado para Kiosco Monalisa
-const CACHE_NAME = 'monalisa-kiosco-v2'; // Incrementamos versión por cambios de lógica
+const CACHE_NAME = 'monalisa-kiosco-v2';
 const urlsToCache = [
   '/',
   '/manifest.json',
@@ -34,18 +34,18 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Estrategia de Red: Network First con fallback a Cache
+// Estrategia: Network First con filtrado de métodos
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // MEJORA: No interceptar peticiones que no sean GET (esto elimina el error de los POST)
+  // CORRECCIÓN: El Cache API no soporta 'POST'. Solo procesamos 'GET'.
   if (request.method !== 'GET') return;
 
-  // MEJORA: Ignorar esquemas que no sean http/https (como chrome-extension://)
+  // MEJORA: Ignorar peticiones que no sean http/https (como extensiones de Chrome)
   if (!url.protocol.startsWith('http')) return;
 
-  // MEJORA: Ignorar llamadas de API o de Next.js internas para evitar conflictos
+  // MEJORA: No cachear rutas de API ni archivos internos de Next.js
   if (url.pathname.includes('/api/') || url.pathname.includes('_next')) {
     return;
   }
@@ -53,7 +53,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        // Solo cachear si la respuesta es válida y del mismo origen (seguridad)
+        // Solo cachear respuestas exitosas de origen local
         if (response && response.status === 200 && response.type === 'basic') {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -63,7 +63,7 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // Si falla la red (offline), buscar en caché
+        // Fallback al caché si no hay internet
         return caches.match(request);
       })
   );

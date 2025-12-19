@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next"; //
 import { Playfair_Display, Lato } from "next/font/google";
 import "./globals.css";
-import { ServiceWorkerRegistration } from "./components/ServiceWorkerRegistration";
+import ServiceWorkerRegistration from "./components/ServiceWorkerRegistration";
 
 const playfair = Playfair_Display({
   variable: "--font-playfair",
