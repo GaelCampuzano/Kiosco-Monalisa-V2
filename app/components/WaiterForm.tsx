@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { translations, TranslationType } from "@/lib/translations";
@@ -21,6 +21,16 @@ export function WaiterForm({
     text
 }: WaiterFormProps) {
     const [logoError, setLogoError] = useState(false);
+
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        // Auto-focus with a slight delay to allow animation to start
+        const timer = setTimeout(() => {
+            inputRef.current?.focus();
+        }, 500);
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,6 +93,7 @@ export function WaiterForm({
                                 setTableNumber(value);
                             }
                         }}
+                        ref={inputRef}
                         className="w-full bg-black/20 border border-white/10 focus:border-monalisa-gold rounded-sm text-white text-xl sm:text-2xl py-2.5 sm:py-3 px-4 outline-none transition-all font-serif placeholder:text-white/10 text-center"
                         placeholder="#"
                     />
@@ -104,9 +115,15 @@ export function WaiterForm({
 
                 <button
                     type="submit"
-                    className="w-full mt-4 sm:mt-6 bg-monalisa-bronze text-white py-3 sm:py-4 px-6 rounded-sm font-bold tracking-[0.15em] uppercase text-xs hover:bg-monalisa-gold hover:text-monalisa-navy transition-all duration-300 shadow-lg hover:shadow-monalisa-gold/20"
+                    className="w-full mt-4 sm:mt-6 bg-monalisa-bronze text-white py-3 sm:py-4 px-6 rounded-sm font-bold tracking-[0.15em] uppercase text-xs hover:bg-monalisa-gold hover:text-monalisa-navy transition-all duration-300 shadow-lg hover:shadow-monalisa-gold/20 relative overflow-hidden group"
                 >
-                    {text.btnDeliver}
+                    <span className="relative z-10">{text.btnDeliver}</span>
+                    {/* Shimmer Effect */}
+                    <motion.div
+                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
+                        animate={{ x: ['-200%', '200%'] }}
+                        transition={{ duration: 2.5, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
+                    />
                 </button>
             </form>
         </motion.div>

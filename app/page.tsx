@@ -87,6 +87,7 @@ export default function Kiosk() {
               key="tip-selector"
               waiterName={waiterName}
               onTipSelect={handleTipSelection}
+              onBack={() => setStep("WAITER_INPUT")}
               text={text}
             />
           )}
