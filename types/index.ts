@@ -9,6 +9,7 @@ export interface TipRecord {
   userAgent?: string;
   createdAt: string;
   synced: boolean;
+  idempotencyKey?: string;
 }
 
 export type KioskStep = 'WAITER_INPUT' | 'CLIENT_SELECTION' | 'THANK_YOU';

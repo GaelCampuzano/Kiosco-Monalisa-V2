@@ -45,8 +45,9 @@ self.addEventListener('fetch', (event) => {
   // MEJORA: Ignorar peticiones que no sean http/https (como extensiones de Chrome)
   if (!url.protocol.startsWith('http')) return;
 
-  // MEJORA: No cachear rutas de API ni archivos internos de Next.js
-  if (url.pathname.includes('/api/') || url.pathname.includes('_next')) {
+  // MEJORA: No cachear rutas de API ni optimización de imágenes
+  // PERMITIMOS _next/static para que la app funcione offline si se recarga
+  if (url.pathname.includes('/api/') || url.pathname.includes('/_next/image')) {
     return;
   }
 
@@ -62,9 +63,22 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => {
+      .catch(async () => {
         // Fallback al caché si no hay internet
-        return caches.match(request);
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // Si es una navegación (HTML) y no está en caché, devolver la home page
+        // Esto es crucial para SPA/PWA: siempre devolver index.html (o /)
+        if (request.mode === 'navigate') {
+          return caches.match('/');
+        }
+
+        // Si no está en caché ni es navegación, devolver error controlado para evitar "Failed to convert value to Response"
+        // Esto evita el error rojo en consola, aunque el recurso igual fallará (como debe ser si no hay internet)
+        return new Response('', { status: 408, statusText: 'Request timed out' });
       })
   );
 });

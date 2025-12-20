@@ -13,7 +13,7 @@ export function useTips() {
   const syncOfflineTips = useCallback(async () => {
     try {
       const localTips = JSON.parse(localStorage.getItem('offlineTips') || '[]');
-      
+
       if (localTips.length === 0) {
         return; // No hay tips para sincronizar
       }
@@ -31,7 +31,8 @@ export function useTips() {
             {
               waiterName: tip.waiterName,
               tableNumber: tip.tableNumber,
-              tipPercentage: tip.tipPercentage
+              tipPercentage: tip.tipPercentage,
+              idempotencyKey: tip.idempotencyKey // [CORRECCION] Incluir clave para evitar duplicados en sync
             },
             tip.userAgent || navigator.userAgent
           );
@@ -84,30 +85,39 @@ export function useTips() {
   // [CAMBIO] Ahora llama a la Server Action para guardar en MySQL
   const saveTip = async (data: Omit<TipRecord, 'id' | 'createdAt' | 'synced'>) => {
     const { waiterName, tableNumber, tipPercentage } = data;
+
+    // Generar un UUID para idempotencia (evitar duplicados si se reintenta)
+    const idempotencyKey = crypto.randomUUID();
+
     const tipToSave: Omit<TipRecord, 'id' | 'synced'> = {
       tableNumber,
       waiterName,
       tipPercentage,
       createdAt: new Date().toISOString(),
       userAgent: navigator.userAgent,
+      idempotencyKey,
     };
 
     try {
       // 1. Intentar guardar en la base de datos (MySQL via Server Action)
       if (!navigator.onLine) throw new Error('Offline');
-      
-      const result = await saveTipToDb(data, navigator.userAgent);
-      
+
+      // Pasamos el idempotencyKey a la acción del servidor
+      const result = await saveTipToDb({
+        ...data,
+        idempotencyKey
+      }, navigator.userAgent);
+
       if (!result.success) {
         throw new Error(result.error);
       }
 
       console.log("Tip saved to MySQL via Server Action");
-      
+
     } catch (error) {
       // 2. Si falla (OFFLINE o error del servidor), guardar localmente
       console.warn("Network error or Server Save Failed, saving locally", error);
-      
+
       const tipToSaveLocally: TipRecord = {
         ...tipToSave,
         synced: false,
@@ -115,7 +125,7 @@ export function useTips() {
 
       const localTips = JSON.parse(localStorage.getItem('offlineTips') || '[]');
       localStorage.setItem('offlineTips', JSON.stringify([...localTips, tipToSaveLocally]));
-      
+
       // 3. Actualizar el estado visual del UI
       setIsOffline(true);
     }
