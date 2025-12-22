@@ -1,65 +1,57 @@
-import mysql, { Pool } from 'mysql2/promise';
+import { Pool } from '@neondatabase/serverless';
 
 let pool: Pool;
 
-// Configuración de la base de datos a partir de variables de entorno
-const dbConfig: mysql.PoolOptions = {
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
-  // Opciones recomendadas para un entorno de alto tráfico o Serverless:
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  // Configuración SSL para bases de datos en la nube
-  ssl: process.env.DB_SSL === 'true' ? {
-    rejectUnauthorized: true
-  } : undefined,
-};
-
 /**
- * Inicializa el pool de conexiones de MySQL (Singleton) y verifica la tabla.
- * @returns {Promise<Pool>} El pool de conexiones de MySQL.
+ * Initializes the Neon (Postgres) connection pool (Singleton).
+ * @returns {Promise<Pool>} The Neon connection pool.
  */
 export async function getDbPool() {
   if (pool) {
     return pool;
   }
 
-  // Validación básica de credenciales
-  if (!dbConfig.host || !dbConfig.user || !dbConfig.database) {
-    throw new Error('Database environment variables (DB_HOST, DB_USER, DB_NAME) are not fully configured.');
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is not configured.');
   }
 
   try {
-    pool = mysql.createPool(dbConfig);
-    console.log('MySQL Connection Pool initialized.');
+    // Configure the connection pool using the connection string
+    pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: true, // Neon requires SSL
+    });
 
-    const connection = await pool.getConnection();
-    // 1. Crear la tabla 'tips' si no existe
-    await connection.execute(`
+    console.log('Neon (Postgres) Connection Pool initialized.');
+
+    // 1. Verify connection and create table 'tips' if it doesn't exist
+    // Note: Postgres uses SERIAL or GENERATED ALWAYS AS IDENTITY for auto-increment
+    const client = await pool.connect();
+
+    await client.query(`
       CREATE TABLE IF NOT EXISTS tips (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        tableNumber VARCHAR(50) NOT NULL,
-        waiterName VARCHAR(255) NOT NULL,
-        tipPercentage INT NOT NULL,
+        id SERIAL PRIMARY KEY,
+        "tableNumber" VARCHAR(50) NOT NULL,
+        "waiterName" VARCHAR(255) NOT NULL,
+        "tipPercentage" INT NOT NULL,
         amount DECIMAL(10, 2),
-        userAgent VARCHAR(255),
-        createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_created_at (createdAt),
-        INDEX idx_waiter_name (waiterName),
-        INDEX idx_table_number (tableNumber)
+        "userAgent" VARCHAR(255),
+        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    connection.release(); // Libera la conexión
-    console.log('MySQL table "tips" verified/created with indexes.');
-    
+
+    // Add indexes if they don't exist (Postgres doesn't support IF NOT EXISTS for indexes directly in older versions, 
+    // but we can check or just rely on 'IF NOT EXISTS' if using Postgres 9.5+)
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_created_at ON tips ("createdAt");`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_waiter_name ON tips ("waiterName");`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_table_number ON tips ("tableNumber");`);
+
+    client.release(); // Release the client back to the pool
+    console.log('Neon/Postgres table "tips" verified/created with indexes.');
+
   } catch (error) {
-    console.error('Error establishing connection or verifying table in MySQL:', error);
-    // Vuelve a lanzar el error para detener el proceso si la conexión/tabla falla
-    throw error; 
+    console.error('Error establishing connection or verifying table in Neon:', error);
+    throw error;
   }
 
   return pool;

@@ -2,15 +2,13 @@
 
 import { TipRecord } from "@/types";
 import { getDbPool } from "@/lib/db";
-// [CORRECCIÓN CLAVE]: Importar RowDataPacket para el tipado correcto de consultas SELECT
-import { RowDataPacket } from 'mysql2/promise';
 
 /**
- * Guarda un registro de propina en la base de datos MySQL.
+ * Saves a tip record to the Neon (Postgres) database.
  */
 export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'synced' | 'userAgent'>, userAgent: string) {
   try {
-    // Validación básica de entrada
+    // Basic input validation
     if (!data.tableNumber || !data.waiterName || !data.tipPercentage) {
       return { success: false, error: 'Missing required fields' };
     }
@@ -29,70 +27,59 @@ export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'sy
 
     const pool = await getDbPool();
 
-    // Ejecuta la inserción en MySQL
+    // Postgres uses $1, $2, etc. for placeholders
+    // We quote identifiers like "tableNumber" to be safe with mixed casing in Postgres definition
     const query = `
-      INSERT INTO tips (tableNumber, waiterName, tipPercentage, userAgent, idempotency_key) 
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO tips ("tableNumber", "waiterName", "tipPercentage", "userAgent") 
+      VALUES ($1, $2, $3, $4)
     `;
 
-    const [result] = await pool.execute(
+    // Note: Neon/pg driver 'query' returns a result object.
+    await pool.query(
       query,
       [
         data.tableNumber.trim(),
         data.waiterName.trim(),
         data.tipPercentage,
-        userAgent?.substring(0, 255) || '',
-        data.idempotencyKey || null
+        userAgent?.substring(0, 255) || ''
       ]
     );
 
-    // Verifica que la inserción haya sido exitosa
-    if ((result as any).affectedRows === 0) {
-      throw new Error('MySQL insert failed, no rows affected.');
-    }
-
+    // If we reach here without error, it succeeded.
     return { success: true };
   } catch (error: any) {
-    // Si es un error de duplicado por idempotency_key, lo consideramos éxito (ya se guardó antes)
-    if (error.code === 'ER_DUP_ENTRY' && error.sqlMessage?.includes('idempotency_key')) {
-      console.warn("Duplicate tip detected (idempotency), treating as success.");
-      return { success: true };
-    }
-
-    console.error("Error al guardar propina en MySQL:", error);
-    // Devuelve un error para activar el modo offline/fallback en el cliente
+    console.error("Error saving tip to Neon:", error);
+    // Generic error fallback
     return { success: false, error: 'Database save failed' };
   }
 }
 
 /**
- * Obtiene todos los registros de propinas de la base de datos MySQL.
+ * Fetches all tip records from the Neon (Postgres) database.
  */
 export async function fetchAllTips(): Promise<TipRecord[]> {
   try {
     const pool = await getDbPool();
 
-    // [CORRECCIÓN APLICADA]: Se usa RowDataPacket[] para evitar el error de compilación.
-    const [rows] = await pool.query<RowDataPacket[]>(
-      `SELECT id, tableNumber, waiterName, tipPercentage, userAgent, createdAt 
+    const result = await pool.query(
+      `SELECT id, "tableNumber", "waiterName", "tipPercentage", "userAgent", "createdAt" 
            FROM tips 
-           ORDER BY createdAt DESC`
+           ORDER BY "createdAt" DESC`
     );
 
-    // Mapeamos los resultados (que ahora son RowDataPacket[]) a TipRecord[]
-    return (rows as RowDataPacket[]).map(tip => ({
-      // Aseguramos que todos los campos sean del tipo correcto para el frontend
+    // Neon/pg returns rows in result.rows
+    return result.rows.map((tip: any) => ({
       id: tip.id?.toString() || '',
-      tableNumber: tip.tableNumber.toString(),
+      tableNumber: tip.tableNumber,
       waiterName: tip.waiterName,
       tipPercentage: tip.tipPercentage,
       userAgent: tip.userAgent,
-      createdAt: tip.createdAt.toString(),
+      createdAt: tip.createdAt.toISOString(), // Postgres date to string
       synced: true,
     })) as TipRecord[];
 
   } catch (error) {
-    console.error("Error al cargar propinas desde MySQL:", error);
+    console.error("Error loading tips from Neon:", error);
     return [];
   }
 }
