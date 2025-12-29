@@ -112,7 +112,7 @@ export function useTips() {
         throw new Error(result.error);
       }
 
-      console.log("Tip saved to MySQL via Server Action");
+      console.log("Tip saved to Neon via Server Action");
 
     } catch (error) {
       // 2. Si falla (OFFLINE o error del servidor), guardar localmente

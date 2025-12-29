@@ -34,28 +34,28 @@ export function TipSelector({ waiterName, onTipSelect, onBack, text }: TipSelect
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     onClick={onBack}
-                    className="absolute top-0 left-0 sm:left-4 p-2 text-monalisa-silver hover:text-white transition-colors flex items-center gap-2 group"
+                    className="absolute top-16 left-4 sm:top-20 sm:left-8 p-0 text-monalisa-silver hover:text-white transition-colors flex items-center gap-2 group z-50 md:fixed md:top-28 md:left-8"
                 >
-                    <div className="bg-white/5 p-2 rounded-full group-hover:bg-white/10 transition-colors">
+                    <div className="bg-white/5 p-2 rounded-full group-hover:bg-white/10 transition-colors backdrop-blur-sm shadow-lg border border-white/5">
                         <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                     </div>
-                    <span className="text-xs font-bold uppercase tracking-widest hidden sm:inline-block opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-2 group-hover:translate-x-0">
+                    <span className="text-xs font-bold uppercase tracking-widest hidden sm:inline-block opacity-0 group-hover:opacity-100 transition-all duration-300 -translate-x-2 group-hover:translate-x-0 bg-black/40 px-3 py-1 rounded-sm backdrop-blur-md border border-white/5">
                         Volver
                     </span>
                 </motion.button>
             )}
 
-            <div className="inline-block bg-[#162B46]/30 backdrop-blur-sm px-4 sm:px-6 md:px-8 py-3 sm:py-4 rounded-full mb-6 sm:mb-8 md:mb-10 border border-white/5 max-w-[95%] sm:max-w-none mt-12 sm:mt-0">
-                <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl lg:text-6xl text-white drop-shadow-md mb-2 leading-tight">
+            <div className="inline-block bg-[#162B46]/30 backdrop-blur-sm px-6 sm:px-10 py-4 sm:py-6 rounded-3xl mb-8 sm:mb-12 border border-white/5 max-w-[90%] mt-16 sm:mt-10 md:mt-0">
+                <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-6xl text-white drop-shadow-md mb-3 leading-tight">
                     {text.clientTitle}
                 </h2>
-                <p className="text-monalisa-gold text-sm sm:text-base md:text-lg font-light tracking-wide px-2">
-                    {text.selectTip} <span className="font-serif italic font-medium text-white border-b border-monalisa-gold/50 px-1 break-words">{waiterName}</span>
+                <p className="text-monalisa-gold text-base sm:text-lg md:text-xl font-light tracking-wide">
+                    {text.selectTip} <span className="font-serif italic font-medium text-white border-b border-monalisa-gold/50 px-2">{waiterName}</span>
                 </p>
             </div>
 
             {/* MEJORA RESPONSIVA: grid-cols-1 en móvil, grid-cols-3 en md (horizontal) */}
-            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3 md:gap-10 px-2 sm:px-4 max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3 md:gap-8 lg:gap-12 px-4 max-w-6xl mx-auto w-full">
                 {[20, 23, 25].map((pct) => (
                     <motion.button
                         key={pct}

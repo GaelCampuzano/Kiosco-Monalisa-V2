@@ -41,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${playfair.variable} ${lato.variable}`}>
+    <html lang="es" className={`${playfair.variable} ${lato.variable}`} suppressHydrationWarning>
       <body className="antialiased bg-[#162B46] text-[#B2B2B2]">
         <ServiceWorkerRegistration />
         {children}

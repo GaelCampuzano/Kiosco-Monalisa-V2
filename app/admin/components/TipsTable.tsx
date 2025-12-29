@@ -55,17 +55,27 @@ export function TipsTable({ tips, search, setSearch, loading, dbAuthenticated }:
                         ) : (
                             filtered.map((tip) => (
                                 <tr key={tip.id} className="hover:bg-monalisa-gold/5 transition-colors group">
-                                    <td className="p-5 text-monalisa-silver font-light">{new Date(tip.createdAt).toLocaleString()}</td>
+                                    <td className="p-5 text-monalisa-silver font-light">
+                                        {new Date(tip.createdAt).toLocaleString('es-MX', {
+                                            timeZone: 'America/Mazatlan',
+                                            day: '2-digit',
+                                            month: '2-digit',
+                                            year: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                            hour12: true
+                                        })}
+                                    </td>
                                     <td className="p-5">
                                         <span className="font-serif text-lg text-white">{tip.tableNumber}</span>
                                     </td>
                                     <td className="p-5 text-white font-medium tracking-wide">{tip.waiterName}</td>
                                     <td className="p-5">
                                         <span className={`px-3 py-1 rounded-sm font-bold text-xs tracking-wider border ${tip.tipPercentage === 25
-                                                ? 'bg-green-900/30 text-green-400 border-green-800/50'
-                                                : tip.tipPercentage === 23
-                                                    ? 'bg-blue-900/30 text-blue-300 border-blue-800/50'
-                                                    : 'bg-monalisa-gold/10 text-monalisa-gold border-monalisa-gold/30'
+                                            ? 'bg-green-900/30 text-green-400 border-green-800/50'
+                                            : tip.tipPercentage === 23
+                                                ? 'bg-blue-900/30 text-blue-300 border-blue-800/50'
+                                                : 'bg-monalisa-gold/10 text-monalisa-gold border-monalisa-gold/30'
                                             }`}>
                                             {tip.tipPercentage}%
                                         </span>
