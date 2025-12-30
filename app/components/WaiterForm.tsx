@@ -113,9 +113,11 @@ export function WaiterForm({
                     />
                 </div>
 
-                <button
+                <motion.button
                     type="submit"
-                    className="w-full mt-4 sm:mt-6 bg-monalisa-bronze text-white py-3 sm:py-4 px-6 rounded-sm font-bold tracking-[0.15em] uppercase text-xs hover:bg-monalisa-gold hover:text-monalisa-navy transition-all duration-300 shadow-lg hover:shadow-monalisa-gold/20 relative overflow-hidden group"
+                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.02 }}
+                    className="w-full mt-4 sm:mt-6 bg-monalisa-bronze text-white py-3 sm:py-4 px-6 rounded-sm font-bold tracking-[0.15em] uppercase text-xs hover:bg-monalisa-gold hover:text-monalisa-navy transition-colors duration-300 shadow-lg hover:shadow-monalisa-gold/20 relative overflow-hidden group"
                 >
                     <span className="relative z-10">{text.btnDeliver}</span>
                     {/* Shimmer Effect */}
@@ -124,7 +126,7 @@ export function WaiterForm({
                         animate={{ x: ['-200%', '200%'] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
                     />
-                </button>
+                </motion.button>
             </form>
         </motion.div>
     );

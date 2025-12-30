@@ -21,7 +21,7 @@ import { Background } from "@/app/components/Background";
 import { SuccessAnimation } from "@/app/components/SuccessAnimation";
 
 export default function Kiosk() {
-  const { saveTip, isOffline } = useTips();
+  const { saveTip, isOffline, isSyncing, pendingCount } = useTips();
   const [lang, setLang] = useState<Language>("es");
   const [step, setStep] = useState<KioskStep>("WAITER_INPUT");
   const [waiterName, setWaiterName] = useState("");
@@ -57,7 +57,7 @@ export default function Kiosk() {
       <Background />
 
       <LanguageToggle lang={lang} setLang={setLang} />
-      <StatusIndicator isOffline={isOffline} text={text} />
+      <StatusIndicator isOffline={isOffline} isSyncing={isSyncing} pendingCount={pendingCount} text={text} />
 
       <Link href="/admin" className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 z-30 opacity-30 hover:opacity-100 transition-opacity p-2 text-white">
         <Shield className="w-4 h-4 sm:w-5 sm:h-5" />

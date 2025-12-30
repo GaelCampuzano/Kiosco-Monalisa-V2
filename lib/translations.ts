@@ -15,6 +15,10 @@ export const translations = {
         online: "En línea",
         offline: "Sin conexión",
         offlineMsg: "Datos guardados localmente. Se enviarán al reconectar.",
+        syncing: "Sincronizando datos pendientes...",
+        synced: "Datos sincronizados correctamente",
+        savedOffline: "Guardado localmente (Sin conexión)",
+        connectionRestored: "Conexión restaurada",
     },
     en: {
         waiterTitle: "Table Setup",
@@ -30,6 +34,10 @@ export const translations = {
         online: "Online",
         offline: "Offline",
         offlineMsg: "Data saved locally. Will sync when back online.",
+        syncing: "Syncing pending data...",
+        synced: "Data synced successfully",
+        savedOffline: "Saved locally (Offline)",
+        connectionRestored: "Connection restored",
     }
 } as const;
 
