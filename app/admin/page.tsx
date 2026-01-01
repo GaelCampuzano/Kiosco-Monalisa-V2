@@ -11,8 +11,7 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState("");
 
   const handleExport = () => {
-    // Re-filter for export to ensure we export what is seen (or export all?)
-    // This logic mimics the original which exported 'filtered'
+    // Re-filtrar para exportación para asegurar que exportamos lo que se ve
     const filtered = tips.filter(t =>
       t.waiterName.toLowerCase().includes(search.toLowerCase()) ||
       t.tableNumber.toLowerCase().includes(search.toLowerCase())

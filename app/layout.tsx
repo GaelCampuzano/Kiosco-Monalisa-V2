@@ -21,7 +21,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  userScalable: false, // Evita zoom accidental en iPad
+  userScalable: false, // Evita zoom accidental en dispositivos táctiles como iPad
   themeColor: "#162B46",
 };
 

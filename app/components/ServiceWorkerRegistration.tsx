@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 
 // Usamos export default para que el layout lo encuentre correctamente
+// Este componente registra el Service Worker para capacidades PWA y offline
 export default function ServiceWorkerRegistration() {
   useEffect(() => {
     if ('serviceWorker' in navigator) {
@@ -26,5 +27,5 @@ export default function ServiceWorkerRegistration() {
     }
   }, []);
 
-  return null; // Este componente no renderiza nada visual
+  return null; // Este componente no renderiza nada visual, solo ejecuta lógica
 }

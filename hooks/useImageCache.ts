@@ -20,7 +20,7 @@ export function useImageCache(isOffline: boolean) {
                         })
                     );
                 } catch {
-                    // Silently fail if cache API fails
+                    // Fallo silencioso si la API de caché falla
                 }
             };
             cacheImages();

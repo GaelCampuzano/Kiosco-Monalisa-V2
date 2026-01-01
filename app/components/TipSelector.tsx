@@ -15,7 +15,7 @@ export function TipSelector({ waiterName, onTipSelect, onBack, text }: TipSelect
     const [selectedPct, setSelectedPct] = useState<TipPercentage | null>(null);
 
     const handleSelect = (pct: TipPercentage) => {
-        if (selectedPct !== null) return; // Prevenir doble click
+        if (selectedPct !== null) return; // Prevenir doble clic
         setSelectedPct(pct);
         onTipSelect(pct);
     };
@@ -28,7 +28,7 @@ export function TipSelector({ waiterName, onTipSelect, onBack, text }: TipSelect
             exit={{ opacity: 0, scale: 1.05 }}
             className="w-full text-center relative"
         >
-            {/* BACK BUTTON */}
+            {/* BOTÓN DE VOLVER */}
             {onBack && (
                 <motion.button
                     initial={{ opacity: 0, x: -20 }}

@@ -9,7 +9,7 @@ export function Background() {
             {/* Fallback de fondo siempre presente */}
             <div className="absolute inset-0 bg-gradient-to-br from-[#162B46] via-[#1a3450] to-[#162B46]" />
 
-            {/* Intentar cargar imagen siempre */}
+            {/* Intentar cargar imagen siempre, usar prioridad para carga rápida */}
             {!imageError && (
                 <Image
                     src="/bkg.jpg"
@@ -22,7 +22,7 @@ export function Background() {
                 />
             )}
 
-            {/* Overlays decorativos */}
+            {/* Overlays decorativos para mejorar legibilidad */}
             <div className="absolute inset-0 bg-[#162B46]/60 mix-blend-multiply" />
             <div className="absolute inset-0 bg-gradient-to-t from-[#162B46] via-transparent to-[#162B46]/30" />
         </div>

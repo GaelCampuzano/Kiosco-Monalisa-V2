@@ -13,7 +13,7 @@ interface StatusIndicatorProps {
 }
 
 export function StatusIndicator({ isOffline, isSyncing, pendingCount = 0, text }: StatusIndicatorProps) {
-  // Determine state: Syncing > Offline > Online
+  // Determinar estado: Sincronizando > Offline > Online
   const state = isSyncing ? 'syncing' : isOffline ? 'offline' : 'online';
 
   const styles = {

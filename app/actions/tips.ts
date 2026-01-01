@@ -4,37 +4,37 @@ import { TipRecord } from "@/types";
 import { getDbPool } from "@/lib/db";
 
 /**
- * Saves a tip record to the Neon (Postgres) database.
+ * Guarda un registro de propina en la base de datos Neon (Postgres).
  */
 export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'synced' | 'userAgent'>, userAgent: string) {
   try {
-    // Basic input validation
+    // Validación básica de entrada
     if (!data.tableNumber || !data.waiterName || !data.tipPercentage) {
-      return { success: false, error: 'Missing required fields' };
+      return { success: false, error: 'Faltan campos requeridos' };
     }
 
     if (![20, 23, 25].includes(data.tipPercentage)) {
-      return { success: false, error: 'Invalid tip percentage' };
+      return { success: false, error: 'Porcentaje de propina inválido' };
     }
 
     if (data.tableNumber.length > 50) {
-      return { success: false, error: 'Table number too long' };
+      return { success: false, error: 'Número de mesa demasiado largo' };
     }
 
     if (data.waiterName.length > 255) {
-      return { success: false, error: 'Waiter name too long' };
+      return { success: false, error: 'Nombre de mesero demasiado largo' };
     }
 
     const pool = await getDbPool();
 
-    // Postgres uses $1, $2, etc. for placeholders
-    // We quote identifiers like "tableNumber" to be safe with mixed casing in Postgres definition
+    // Postgres usa $1, $2, etc. para marcadores de posición
+    // Usamos comillas para identificadores como "tableNumber" para seguridad con mayúsculas/minúsculas en Postgres
     const query = `
       INSERT INTO tips ("tableNumber", "waiterName", "tipPercentage", "userAgent") 
       VALUES ($1, $2, $3, $4)
     `;
 
-    // Note: Neon/pg driver 'query' returns a result object.
+    // Nota: El driver Neon/pg devuelve un objeto de resultado
     await pool.query(
       query,
       [
@@ -45,7 +45,7 @@ export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'sy
       ]
     );
 
-    // If we reach here without error, it succeeded.
+    // Si llegamos hasta aquí sin errores, todo salió bien
     return { success: true };
   } catch (error: any) {
     console.error("Error saving tip to Neon:", error);
@@ -55,7 +55,7 @@ export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'sy
 }
 
 /**
- * Fetches all tip records from the Neon (Postgres) database.
+ * Recupera todos los registros de propinas de la base de datos Neon (Postgres).
  */
 export async function fetchAllTips(): Promise<TipRecord[]> {
   try {
@@ -67,14 +67,14 @@ export async function fetchAllTips(): Promise<TipRecord[]> {
            ORDER BY "createdAt" DESC`
     );
 
-    // Neon/pg returns rows in result.rows
+    // Neon/pg devuelve filas en result.rows
     return result.rows.map((tip: any) => ({
       id: tip.id?.toString() || '',
       tableNumber: tip.tableNumber,
       waiterName: tip.waiterName,
       tipPercentage: tip.tipPercentage,
       userAgent: tip.userAgent,
-      createdAt: tip.createdAt.toISOString(), // Postgres date to string
+      createdAt: tip.createdAt.toISOString(), // Postgres date a string
       synced: true,
     })) as TipRecord[];
 

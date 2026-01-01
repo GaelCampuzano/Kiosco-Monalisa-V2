@@ -5,54 +5,54 @@ export function useWakeLock() {
 
   useEffect(() => {
     const requestWakeLock = async () => {
-      // Only request WakeLock if the API is available
+      // Solo solicitar WakeLock si la API está disponible
       if (typeof navigator === 'undefined' || !('wakeLock' in navigator)) {
         return;
       }
-      
-      // Check if page is visible
+
+      // Verificar si la página es visible
       if (document.visibilityState !== 'visible') {
         return;
       }
-      
+
       try {
-        // Release existing lock if any
+        // Liberar bloqueo existente si lo hay
         if (wakeLock.current) {
           await wakeLock.current.release();
           wakeLock.current = null;
         }
-        
+
         wakeLock.current = await navigator.wakeLock.request('screen');
       } catch (err: any) {
-        // Ignore common errors (not allowed, not supported, etc.)
+        // Ignorar errores comunes (no permitido, no soportado, etc.)
         if (err.name !== 'NotAllowedError' && err.name !== 'NotSupportedError') {
-          console.warn('Wake Lock error:', err);
+          console.warn('Error Wake Lock:', err);
         }
       }
     };
-    
-    // Request on mount if visible
+
+    // Solicitar al montar si es visible
     if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
       requestWakeLock();
     }
-    
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         requestWakeLock();
       } else {
-        // Release when hidden
+        // Liberar cuando se oculta
         if (wakeLock.current) {
-          wakeLock.current.release().catch(() => {});
+          wakeLock.current.release().catch(() => { });
           wakeLock.current = null;
         }
       }
     };
-    
+
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
+
     return () => {
       if (wakeLock.current) {
-        wakeLock.current.release().catch(() => {});
+        wakeLock.current.release().catch(() => { });
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

@@ -1,5 +1,11 @@
+/**
+ * Definición de tipos para porcentajes de propina permitidos.
+ */
 export type TipPercentage = 20 | 23 | 25;
 
+/**
+ * Interfaz principal para el registro de propinas.
+ */
 export interface TipRecord {
   id?: string;
   tableNumber: string;

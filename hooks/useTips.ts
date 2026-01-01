@@ -8,7 +8,7 @@ export function useTips() {
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
 
-  // Helper to update pending count from local storage
+  // Ayudante para actualizar el conteo pendiente desde localStorage
   const updatePendingCount = useCallback(() => {
     try {
       const localTips = JSON.parse(localStorage.getItem('offlineTips') || '[]');
@@ -128,11 +128,11 @@ export function useTips() {
         throw new Error(result.error);
       }
 
-      console.log("Tip saved via Server Action");
+      console.log("Tip guardado vía Server Action");
       toast.success("Propina registrada correctamente");
 
     } catch (error) {
-      console.warn("Saving locally due to error:", error);
+      console.warn("Guardando localmente debido a error:", error);
 
       const tipToSaveLocally: TipRecord = {
         ...tipToSave,

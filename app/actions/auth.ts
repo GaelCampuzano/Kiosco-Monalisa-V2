@@ -16,7 +16,7 @@ export async function login(prevState: any, formData: FormData) {
     const user = formData.get('user') as string;
     const password = formData.get('password') as string;
 
-    // Validación básica de entrada
+    // Basic input validation
     if (!user || !password) {
       return { error: 'Usuario y contraseña son requeridos.' };
     }
@@ -25,7 +25,7 @@ export async function login(prevState: any, formData: FormData) {
       return { error: 'Credenciales inválidas.' };
     }
 
-    // 1. Validar configuracion (Environment variables)
+    // 1. Validar configuración (Variables de entorno)
     if (!ADMIN_USER || !ADMIN_PASSWORD) {
       console.error("ADMIN_USER o ADMIN_PASSWORD no están configuradas.");
       return { error: 'Error de configuración del servidor.' };

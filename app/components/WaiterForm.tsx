@@ -25,7 +25,7 @@ export function WaiterForm({
     const inputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        // Auto-focus with a slight delay to allow animation to start
+        // Auto-enfoque con un ligero retraso para permitir que la animación comience
         const timer = setTimeout(() => {
             inputRef.current?.focus();
         }, 500);
@@ -120,7 +120,7 @@ export function WaiterForm({
                     className="w-full mt-4 sm:mt-6 bg-monalisa-bronze text-white py-3 sm:py-4 px-6 rounded-sm font-bold tracking-[0.15em] uppercase text-xs hover:bg-monalisa-gold hover:text-monalisa-navy transition-colors duration-300 shadow-lg hover:shadow-monalisa-gold/20 relative overflow-hidden group"
                 >
                     <span className="relative z-10">{text.btnDeliver}</span>
-                    {/* Shimmer Effect */}
+                    {/* Efecto de Brillo */}
                     <motion.div
                         className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
                         animate={{ x: ['-200%', '200%'] }}

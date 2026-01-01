@@ -3,8 +3,8 @@ import { Pool } from '@neondatabase/serverless';
 let pool: Pool;
 
 /**
- * Initializes the Neon (Postgres) connection pool (Singleton).
- * @returns {Promise<Pool>} The Neon connection pool.
+ * Inicializa el pool de conexiones a Neon (Postgres) utilizando el patrón Singleton.
+ * @returns {Promise<Pool>} El pool de conexiones a Neon.
  */
 export async function getDbPool() {
   if (pool) {
@@ -12,20 +12,18 @@ export async function getDbPool() {
   }
 
   if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL environment variable is not configured.');
+    throw new Error('La variable de entorno DATABASE_URL no está configurada.');
   }
 
   try {
-    // Configure the connection pool using the connection string
+    // Configurar el pool de conexiones usando la cadena de conexión
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: true, // Neon requires SSL
+      ssl: true, // Neon requiere SSL
     });
 
-    console.log('Neon (Postgres) Connection Pool initialized.');
-
-    // 1. Verify connection and create table 'tips' if it doesn't exist
-    // Note: Postgres uses SERIAL or GENERATED ALWAYS AS IDENTITY for auto-increment
+    // 1. Verificar conexión y crear la tabla 'tips' si no existe
+    // Nota: Postgres usa SERIAL o GENERATED ALWAYS AS IDENTITY para auto-incremento
     const client = await pool.connect();
 
     await client.query(`
@@ -40,17 +38,16 @@ export async function getDbPool() {
       );
     `);
 
-    // Add indexes if they don't exist (Postgres doesn't support IF NOT EXISTS for indexes directly in older versions, 
-    // but we can check or just rely on 'IF NOT EXISTS' if using Postgres 9.5+)
+    // Agregar índices si no existen (Postgres no soporta IF NOT EXISTS para índices directamente en versiones antiguas,
+    // pero podemos confiar en la verificación de errores o lógica condicional si fuera necesario, aquí lo mantenemos simple)
     await client.query(`CREATE INDEX IF NOT EXISTS idx_created_at ON tips ("createdAt");`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_waiter_name ON tips ("waiterName");`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_table_number ON tips ("tableNumber");`);
 
-    client.release(); // Release the client back to the pool
-    console.log('Neon/Postgres table "tips" verified/created with indexes.');
+    client.release(); // Liberar el cliente de vuelta al pool
 
   } catch (error) {
-    console.error('Error establishing connection or verifying table in Neon:', error);
+    console.error('Error estableciendo conexión o verificando tabla en Neon:', error);
     throw error;
   }
 

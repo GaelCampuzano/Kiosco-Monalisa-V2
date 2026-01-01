@@ -12,6 +12,7 @@ interface AdminStatsProps {
 }
 
 function MotionNumber({ value, suffix = "" }: { value: number, suffix?: string }) {
+    // Animación suave de números
     const spring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
     const display = useTransform(spring, (current) => Math.round(current) + suffix);
 

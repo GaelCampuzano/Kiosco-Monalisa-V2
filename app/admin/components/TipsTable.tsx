@@ -58,7 +58,7 @@ export function TipsTable({ tips, search, setSearch, loading, dbAuthenticated }:
                                     <td className="p-5 text-monalisa-silver font-light whitespace-nowrap">
                                         {(() => {
                                             const dateStr = typeof tip.createdAt === 'string' ? tip.createdAt : new Date(tip.createdAt).toISOString();
-                                            // Ensure UTC interpretation if 'Z' is missing but it looks like ISO
+                                            // Asegurar interpretación UTC si falta 'Z' pero parece ISO
                                             const safeDateStr = dateStr.endsWith('Z') ? dateStr : `${dateStr}Z`;
 
                                             return new Date(safeDateStr).toLocaleString('es-MX', {

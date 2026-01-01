@@ -21,6 +21,7 @@ import { Background } from "@/app/components/Background";
 import { SuccessAnimation } from "@/app/components/SuccessAnimation";
 
 export default function Kiosk() {
+  // Hooks personalizados y estado
   const { saveTip, isOffline, isSyncing, pendingCount } = useTips();
   const [lang, setLang] = useState<Language>("es");
   const [step, setStep] = useState<KioskStep>("WAITER_INPUT");
@@ -28,7 +29,7 @@ export default function Kiosk() {
   const [tableNumber, setTableNumber] = useState("");
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
-  // Custom Hooks
+  // Inicialización de hooks de utilidad
   useWakeLock();
   useImageCache(isOffline);
 

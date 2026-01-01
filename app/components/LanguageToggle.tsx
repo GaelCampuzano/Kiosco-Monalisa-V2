@@ -11,6 +11,7 @@ interface LanguageToggleProps {
 export function LanguageToggle({ lang, setLang }: LanguageToggleProps) {
   return (
     <div className="absolute top-4 left-4 sm:top-8 sm:left-8 z-30 flex gap-1 sm:gap-2 p-1 bg-black/20 backdrop-blur-md rounded-full border border-white/5">
+      {/* Botones de cambio de idioma */}
       {["es", "en"].map((l) => (
         <button
           key={l}
