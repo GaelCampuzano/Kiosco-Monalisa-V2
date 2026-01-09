@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { TipRecord } from '@/types';
 import { saveTipToDb } from '@/app/actions/tips';
+import { generateUUID } from '@/lib/utils';
 
 export function useTips() {
   const [isOffline, setIsOffline] = useState(false);
@@ -105,7 +106,7 @@ export function useTips() {
 
   const saveTip = async (data: Omit<TipRecord, 'id' | 'createdAt' | 'synced'>) => {
     const { waiterName, tableNumber, tipPercentage } = data;
-    const idempotencyKey = crypto.randomUUID();
+    const idempotencyKey = generateUUID();
 
     const tipToSave: Omit<TipRecord, 'id' | 'synced'> = {
       tableNumber,

@@ -1,53 +1,64 @@
-import { Pool } from '@neondatabase/serverless';
+import mysql, { Pool } from 'mysql2/promise';
 
 let pool: Pool;
 
+// Configuración de la base de datos a partir de variables de entorno
+const dbConfig: mysql.PoolOptions = {
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : 3306,
+  // Opciones recomendadas para un entorno de alto tráfico o Serverless:
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
+  // Configuración SSL para bases de datos en la nube
+  ssl: process.env.DB_SSL === 'true' ? {
+    rejectUnauthorized: true
+  } : undefined,
+};
+
 /**
- * Inicializa el pool de conexiones a Neon (Postgres) utilizando el patrón Singleton.
- * @returns {Promise<Pool>} El pool de conexiones a Neon.
+ * Inicializa el pool de conexiones de MySQL (Singleton) y verifica la tabla.
+ * @returns {Promise<Pool>} El pool de conexiones de MySQL.
  */
 export async function getDbPool() {
   if (pool) {
     return pool;
   }
 
-  if (!process.env.DATABASE_URL) {
-    throw new Error('La variable de entorno DATABASE_URL no está configurada.');
+  // Validación básica de credenciales
+  if (!dbConfig.host || !dbConfig.user || !dbConfig.database) {
+    throw new Error('Database environment variables (DB_HOST, DB_USER, DB_NAME) are not fully configured.');
   }
 
   try {
-    // Configurar el pool de conexiones usando la cadena de conexión
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: true, // Neon requiere SSL
-    });
+    pool = mysql.createPool(dbConfig);
+    console.log('MySQL Connection Pool initialized.');
 
-    // 1. Verificar conexión y crear la tabla 'tips' si no existe
-    // Nota: Postgres usa SERIAL o GENERATED ALWAYS AS IDENTITY para auto-incremento
-    const client = await pool.connect();
-
-    await client.query(`
+    const connection = await pool.getConnection();
+    // 1. Crear la tabla 'tips' si no existe
+    await connection.execute(`
       CREATE TABLE IF NOT EXISTS tips (
-        id SERIAL PRIMARY KEY,
-        "tableNumber" VARCHAR(50) NOT NULL,
-        "waiterName" VARCHAR(255) NOT NULL,
-        "tipPercentage" INT NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        tableNumber VARCHAR(50) NOT NULL,
+        waiterName VARCHAR(255) NOT NULL,
+        tipPercentage INT NOT NULL,
         amount DECIMAL(10, 2),
-        "userAgent" VARCHAR(255),
-        "createdAt" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        userAgent VARCHAR(255),
+        createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_created_at (createdAt),
+        INDEX idx_waiter_name (waiterName),
+        INDEX idx_table_number (tableNumber)
       );
     `);
-
-    // Agregar índices si no existen (Postgres no soporta IF NOT EXISTS para índices directamente en versiones antiguas,
-    // pero podemos confiar en la verificación de errores o lógica condicional si fuera necesario, aquí lo mantenemos simple)
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_created_at ON tips ("createdAt");`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_waiter_name ON tips ("waiterName");`);
-    await client.query(`CREATE INDEX IF NOT EXISTS idx_table_number ON tips ("tableNumber");`);
-
-    client.release(); // Liberar el cliente de vuelta al pool
+    connection.release(); // Libera la conexión
+    console.log('MySQL table "tips" verified/created with indexes.');
 
   } catch (error) {
-    console.error('Error estableciendo conexión o verificando tabla en Neon:', error);
+    console.error('Error establishing connection or verifying table in MySQL:', error);
+    // Vuelve a lanzar el error para detener el proceso si la conexión/tabla falla
     throw error;
   }
 

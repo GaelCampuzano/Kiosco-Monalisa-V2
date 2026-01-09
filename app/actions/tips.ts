@@ -2,100 +2,97 @@
 
 import { TipRecord } from "@/types";
 import { getDbPool } from "@/lib/db";
+// [CORRECCIÓN CLAVE]: Importar RowDataPacket para el tipado correcto de consultas SELECT
+import { RowDataPacket } from 'mysql2/promise';
 
 /**
- * Guarda un registro de propina en la base de datos Neon (Postgres).
+ * Guarda un registro de propina en la base de datos MySQL.
  */
 export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'synced' | 'userAgent'>, userAgent: string) {
   try {
     // Validación básica de entrada
     if (!data.tableNumber || !data.waiterName || !data.tipPercentage) {
-      return { success: false, error: 'Faltan campos requeridos' };
+      return { success: false, error: 'Missing required fields' };
     }
 
     if (![20, 23, 25].includes(data.tipPercentage)) {
-      return { success: false, error: 'Porcentaje de propina inválido' };
+      return { success: false, error: 'Invalid tip percentage' };
     }
 
     if (data.tableNumber.length > 50) {
-      return { success: false, error: 'Número de mesa demasiado largo' };
+      return { success: false, error: 'Table number too long' };
     }
 
     if (data.waiterName.length > 255) {
-      return { success: false, error: 'Nombre de mesero demasiado largo' };
+      return { success: false, error: 'Waiter name too long' };
     }
 
     const pool = await getDbPool();
 
-    // Postgres usa $1, $2, etc. para marcadores de posición
-    // Usamos comillas para identificadores como "tableNumber" para seguridad con mayúsculas/minúsculas en Postgres
+    // Ejecuta la inserción en MySQL
     const query = `
-      INSERT INTO tips ("tableNumber", "waiterName", "tipPercentage", "userAgent") 
-      VALUES ($1, $2, $3, $4)
+      INSERT INTO tips (tableNumber, waiterName, tipPercentage, userAgent, idempotency_key) 
+      VALUES (?, ?, ?, ?, ?)
     `;
 
-    // Nota: El driver Neon/pg devuelve un objeto de resultado
-    await pool.query(
+    const [result] = await pool.execute(
       query,
       [
         data.tableNumber.trim(),
         data.waiterName.trim(),
         data.tipPercentage,
-        userAgent?.substring(0, 255) || ''
+        userAgent?.substring(0, 255) || '',
+        data.idempotencyKey || null
       ]
     );
 
-    // Si llegamos hasta aquí sin errores, todo salió bien
+    // Verifica que la inserción haya sido exitosa
+    if ((result as any).affectedRows === 0) {
+      throw new Error('MySQL insert failed, no rows affected.');
+    }
+
     return { success: true };
-  } catch (error: unknown) {
-    console.error("Error saving tip to Neon:", error);
-    // Generic error fallback
+  } catch (error: any) {
+    // Si es un error de duplicado por idempotency_key, lo consideramos éxito (ya se guardó antes)
+    if (error.code === 'ER_DUP_ENTRY' && error.sqlMessage?.includes('idempotency_key')) {
+      console.warn("Duplicate tip detected (idempotency), treating as success.");
+      return { success: true };
+    }
+
+    console.error("Error al guardar propina en MySQL:", error);
+    // Devuelve un error para activar el modo offline/fallback en el cliente
     return { success: false, error: 'Database save failed' };
   }
 }
 
 /**
- * Recupera todos los registros de propinas de la base de datos Neon (Postgres).
+ * Obtiene todos los registros de propinas de la base de datos MySQL.
  */
 export async function fetchAllTips(): Promise<TipRecord[]> {
   try {
     const pool = await getDbPool();
 
-    const result = await pool.query(
-      `SELECT id, "tableNumber", "waiterName", "tipPercentage", "userAgent", "createdAt"::text 
+    // [CORRECCIÓN APLICADA]: Se usa RowDataPacket[] para evitar el error de compilación.
+    const [rows] = await pool.query<RowDataPacket[]>(
+      `SELECT id, tableNumber, waiterName, tipPercentage, userAgent, createdAt 
            FROM tips 
-           ORDER BY "createdAt" DESC`
+           ORDER BY createdAt DESC`
     );
 
-    // Neon/pg devuelve filas en result.rows
-    // Definimos una interfaz temporal para el resultado crudo de la DB para evitar 'any'
-    interface RawTip {
-      id: number;
-      tableNumber: string;
-      waiterName: string;
-      tipPercentage: number;
-      userAgent: string;
-      createdAt: string; // Ahora es string directo de Postgres
-    }
-
-    return (result.rows as RawTip[]).map((tip) => {
-      // Postgres devuelve formato: "2026-01-08 23:11:00" (sin T ni Z en default text cast)
-      // Forzamos interpretación UTC formateando a ISO explícito
-      const cleanDate = tip.createdAt.replace(' ', 'T') + 'Z';
-
-      return {
-        id: tip.id?.toString() || '',
-        tableNumber: tip.tableNumber,
-        waiterName: tip.waiterName,
-        tipPercentage: tip.tipPercentage,
-        userAgent: tip.userAgent,
-        createdAt: cleanDate,
-        synced: true,
-      };
-    }) as TipRecord[];
+    // Mapeamos los resultados (que ahora son RowDataPacket[]) a TipRecord[]
+    return (rows as RowDataPacket[]).map(tip => ({
+      // Aseguramos que todos los campos sean del tipo correcto para el frontend
+      id: tip.id?.toString() || '',
+      tableNumber: tip.tableNumber.toString(),
+      waiterName: tip.waiterName,
+      tipPercentage: tip.tipPercentage,
+      userAgent: tip.userAgent,
+      createdAt: tip.createdAt.toString(),
+      synced: true,
+    })) as TipRecord[];
 
   } catch (error) {
-    console.error("Error loading tips from Neon:", error);
+    console.error("Error al cargar propinas desde MySQL:", error);
     return [];
   }
 }

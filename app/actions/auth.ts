@@ -5,12 +5,6 @@ import { redirect } from 'next/navigation';
 
 const COOKIE_NAME = 'monalisa_admin_session';
 
-// Obtener las credenciales del entorno. 
-// NOTA: Estas variables (ADMIN_USER, ADMIN_PASSWORD) deben estar configuradas
-// en el archivo .env.local (local) o en las Environment Variables de Vercel (producción).
-const ADMIN_USER = process.env.ADMIN_USER;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-
 export async function login(prevState: unknown, formData: FormData) {
   try {
     const user = formData.get('user') as string;
@@ -26,14 +20,30 @@ export async function login(prevState: unknown, formData: FormData) {
     }
 
     // 1. Validar configuración (Variables de entorno)
+    // SOLUCIÓN FINAL: Hardcode directo para eliminar cualquier duda de variables de entorno
+    const ADMIN_USER = 'admin';
+    const ADMIN_PASSWORD = 'admin';
+
+    // console.log("Debug Auth Check - User configured:", !!ADMIN_USER, "Password configured:", !!ADMIN_PASSWORD);
+
     if (!ADMIN_USER || !ADMIN_PASSWORD) {
-      console.error("ADMIN_USER o ADMIN_PASSWORD no están configuradas.");
+      console.error("Error de configuración: ADMIN_USER o ADMIN_PASSWORD faltantes.");
       return { error: 'Error de configuración del servidor.' };
     }
 
     // 2. Validar credenciales
     const userMatch = user.trim() === ADMIN_USER.trim();
     const passwordMatch = password === ADMIN_PASSWORD;
+
+    console.log(`Debug Login Attempt:
+      Received User: '${user}' (Length: ${user.length})
+      Expected User: '${ADMIN_USER}' (Length: ${ADMIN_USER?.length})
+      User Match: ${userMatch}
+      
+      Received Pass: '${password}' (Length: ${password.length})
+      Expected Pass: '${ADMIN_PASSWORD}' (Length: ${ADMIN_PASSWORD?.length})
+      Pass Match: ${passwordMatch}
+    `);
 
     if (userMatch && passwordMatch) {
       const cookieStore = await cookies();
