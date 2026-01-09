@@ -47,7 +47,7 @@ export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'sy
 
     // Si llegamos hasta aquí sin errores, todo salió bien
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error saving tip to Neon:", error);
     // Generic error fallback
     return { success: false, error: 'Database save failed' };
@@ -62,21 +62,37 @@ export async function fetchAllTips(): Promise<TipRecord[]> {
     const pool = await getDbPool();
 
     const result = await pool.query(
-      `SELECT id, "tableNumber", "waiterName", "tipPercentage", "userAgent", "createdAt" 
+      `SELECT id, "tableNumber", "waiterName", "tipPercentage", "userAgent", "createdAt"::text 
            FROM tips 
            ORDER BY "createdAt" DESC`
     );
 
     // Neon/pg devuelve filas en result.rows
-    return result.rows.map((tip: any) => ({
-      id: tip.id?.toString() || '',
-      tableNumber: tip.tableNumber,
-      waiterName: tip.waiterName,
-      tipPercentage: tip.tipPercentage,
-      userAgent: tip.userAgent,
-      createdAt: tip.createdAt.toISOString(), // Postgres date a string
-      synced: true,
-    })) as TipRecord[];
+    // Definimos una interfaz temporal para el resultado crudo de la DB para evitar 'any'
+    interface RawTip {
+      id: number;
+      tableNumber: string;
+      waiterName: string;
+      tipPercentage: number;
+      userAgent: string;
+      createdAt: string; // Ahora es string directo de Postgres
+    }
+
+    return (result.rows as RawTip[]).map((tip) => {
+      // Postgres devuelve formato: "2026-01-08 23:11:00" (sin T ni Z en default text cast)
+      // Forzamos interpretación UTC formateando a ISO explícito
+      const cleanDate = tip.createdAt.replace(' ', 'T') + 'Z';
+
+      return {
+        id: tip.id?.toString() || '',
+        tableNumber: tip.tableNumber,
+        waiterName: tip.waiterName,
+        tipPercentage: tip.tipPercentage,
+        userAgent: tip.userAgent,
+        createdAt: cleanDate,
+        synced: true,
+      };
+    }) as TipRecord[];
 
   } catch (error) {
     console.error("Error loading tips from Neon:", error);

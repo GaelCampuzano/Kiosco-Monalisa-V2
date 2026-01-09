@@ -23,9 +23,10 @@ export function useWakeLock() {
         }
 
         wakeLock.current = await navigator.wakeLock.request('screen');
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Ignorar errores comunes (no permitido, no soportado, etc.)
-        if (err.name !== 'NotAllowedError' && err.name !== 'NotSupportedError') {
+        const errorName = (err as { name?: string }).name;
+        if (errorName !== 'NotAllowedError' && errorName !== 'NotSupportedError') {
           console.warn('Error Wake Lock:', err);
         }
       }

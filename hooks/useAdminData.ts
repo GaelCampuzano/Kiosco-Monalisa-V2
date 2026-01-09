@@ -6,8 +6,8 @@ export function useAdminData() {
     const [tips, setTips] = useState<TipRecord[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Se asume que la autenticación de cookie (middleware/proxy) es suficiente.
-    const [dbAuthenticated, setDbAuthenticated] = useState(true);
+    // Se asume que la autenticación de cookie (proxy) es suficiente.
+    const [dbAuthenticated] = useState(true);
 
     // Estados para métricas
     const [stats, setStats] = useState({

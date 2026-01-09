@@ -57,19 +57,21 @@ export function TipsTable({ tips, search, setSearch, loading, dbAuthenticated }:
                                 <tr key={tip.id} className="hover:bg-white/5 transition-colors group border-l-2 border-transparent hover:border-monalisa-gold">
                                     <td className="p-5 text-monalisa-silver font-light whitespace-nowrap">
                                         {(() => {
-                                            const dateStr = typeof tip.createdAt === 'string' ? tip.createdAt : new Date(tip.createdAt).toISOString();
-                                            // Asegurar interpretación UTC si falta 'Z' pero parece ISO
-                                            const safeDateStr = dateStr.endsWith('Z') ? dateStr : `${dateStr}Z`;
-
-                                            return new Date(safeDateStr).toLocaleString('es-MX', {
-                                                timeZone: 'America/Mazatlan',
-                                                day: '2-digit',
-                                                month: '2-digit',
-                                                year: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                                hour12: true
-                                            });
+                                            try {
+                                                const date = new Date(tip.createdAt);
+                                                // Usamos Intl.DateTimeFormat para mayor control y consistencia
+                                                return new Intl.DateTimeFormat('es-MX', {
+                                                    timeZone: 'America/Mazatlan',
+                                                    day: '2-digit',
+                                                    month: '2-digit',
+                                                    year: 'numeric',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    hour12: true
+                                                }).format(date);
+                                            } catch (error) {
+                                                return tip.createdAt;
+                                            }
                                         })()}
                                     </td>
                                     <td className="p-5">

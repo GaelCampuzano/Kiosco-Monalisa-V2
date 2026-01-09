@@ -11,7 +11,7 @@ const COOKIE_NAME = 'monalisa_admin_session';
 const ADMIN_USER = process.env.ADMIN_USER;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
-export async function login(prevState: any, formData: FormData) {
+export async function login(prevState: unknown, formData: FormData) {
   try {
     const user = formData.get('user') as string;
     const password = formData.get('password') as string;
@@ -52,8 +52,8 @@ export async function login(prevState: any, formData: FormData) {
       console.log("Credenciales incorrectas");
       return { error: 'Credenciales incorrectas. Intenta de nuevo.' };
     }
-  } catch (error: any) {
-    if (error.message === 'NEXT_REDIRECT') {
+  } catch (error: unknown) {
+    if ((error as { message: string }).message === 'NEXT_REDIRECT') {
       throw error;
     }
     console.error("Error en login action:", error);

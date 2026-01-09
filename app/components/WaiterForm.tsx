@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { translations, TranslationType } from "@/lib/translations";
+import { TranslationType } from "@/lib/translations";
 
 interface WaiterFormProps {
     tableNumber: string;

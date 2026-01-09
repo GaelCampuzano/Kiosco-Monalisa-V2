@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import { useActionState } from "react";
 import { login } from "@/app/actions/auth";
@@ -15,22 +15,29 @@ const initialState = {
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(login, initialState);
   const [logoError, setLogoError] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
+  const isOffline = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
 
-  useEffect(() => {
-    setIsOffline(!navigator.onLine);
-
-    const handleOnline = () => setIsOffline(false);
-    const handleOffline = () => setIsOffline(true);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
+  function subscribe(callback: () => void) {
+    if (typeof window === 'undefined') return () => { };
+    window.addEventListener('online', callback);
+    window.addEventListener('offline', callback);
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', callback);
+      window.removeEventListener('offline', callback);
     };
-  }, []);
+  }
+
+  function getSnapshot() {
+    return !navigator.onLine;
+  }
+
+  function getServerSnapshot() {
+    return false;
+  }
 
   // Pre-cargar y cachear logo cuando esté online
   useEffect(() => {

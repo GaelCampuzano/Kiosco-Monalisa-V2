@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { TipPercentage } from "@/types";
-import { translations, TranslationType } from "@/lib/translations";
+import { TranslationType } from "@/lib/translations";
 
 interface TipSelectorProps {
     waiterName: string;
