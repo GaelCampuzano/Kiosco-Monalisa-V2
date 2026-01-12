@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { TranslationType } from "@/lib/translations";
+import { WaiterAutocomplete } from "./WaiterAutocomplete";
 
 interface WaiterFormProps {
     tableNumber: string;
@@ -99,16 +100,11 @@ export function WaiterForm({
                     />
                 </div>
 
-                <div className="group">
+                <div className="group relative">
                     <label className="block text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest mb-2 ml-1">{text.waiter}</label>
-                    <input
-                        type="text"
-                        required
+                    <WaiterAutocomplete
                         value={waiterName}
-                        onChange={(e) => {
-                            if (!/[0-9]/.test(e.target.value)) setWaiterName(e.target.value);
-                        }}
-                        className="w-full bg-black/20 border border-white/10 focus:border-monalisa-gold rounded-sm text-white text-lg sm:text-xl py-2.5 sm:py-3 px-4 outline-none transition-all font-serif placeholder:text-white/10 text-center"
+                        onChange={setWaiterName}
                         placeholder={text.waiterPlaceholder}
                     />
                 </div>

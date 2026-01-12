@@ -1,16 +1,17 @@
 {
   "name": "Kiosco Monalisa",
   "short_name": "Monalisa",
+  "description": "Sistema de registro de propinas para Sunset Monalisa",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#162B46",
-  "theme_color": "#162B46",
+  "theme_color": "#D3B574",
   "orientation": "landscape",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/logo-monalisa.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
     }
   ]
 }

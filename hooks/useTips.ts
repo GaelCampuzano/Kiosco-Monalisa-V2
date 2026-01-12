@@ -22,20 +22,22 @@ export function useTips() {
   // Sincroniza automáticamente los tips guardados offline cuando vuelve la conexión
   const syncOfflineTips = useCallback(async () => {
     try {
-      const localTips = JSON.parse(localStorage.getItem('offlineTips') || '[]');
+      // 1. Leer instantánea inicial para iterar
+      const tipsToSync: TipRecord[] = JSON.parse(localStorage.getItem('offlineTips') || '[]');
 
-      if (localTips.length === 0) {
+      if (tipsToSync.length === 0) {
         setPendingCount(0);
         return;
       }
 
       setIsSyncing(true);
-      console.log(`Sincronizando ${localTips.length} tips offline...`);
+      console.log(`Sincronizando ${tipsToSync.length} tips offline...`);
 
-      const syncedTips: TipRecord[] = [];
-      const failedTips: TipRecord[] = [];
+      let syncedCount = 0;
+      let failedCount = 0;
 
-      for (const tip of localTips) {
+      // 2. Procesar uno por uno
+      for (const tip of tipsToSync) {
         try {
           const result = await saveTipToDb(
             {
@@ -43,33 +45,39 @@ export function useTips() {
               tableNumber: tip.tableNumber,
               tipPercentage: tip.tipPercentage,
               idempotencyKey: tip.idempotencyKey
-            },
-            tip.userAgent || navigator.userAgent
+            }
           );
 
           if (result.success) {
-            syncedTips.push(tip);
+            syncedCount++;
+
+            // 3. CRÍTICO: Eliminación Atómica
+            // Volvemos a leer localStorage para asegurar que no borramos tips nuevos agregados mientras esperábamos
+            const currentStore: TipRecord[] = JSON.parse(localStorage.getItem('offlineTips') || '[]');
+
+            // Filtramos específicamente el tip que acabamos de guardar (por idempotencyKey)
+            const newStore = currentStore.filter(t => t.idempotencyKey !== tip.idempotencyKey);
+
+            localStorage.setItem('offlineTips', JSON.stringify(newStore));
+            setPendingCount(newStore.length);
           } else {
-            failedTips.push(tip);
+            failedCount++;
+            console.error('Fallo al sincronizar tip:', tip);
           }
         } catch (error) {
-          console.error('Error sincronizando tip:', error);
-          failedTips.push(tip);
+          failedCount++;
+          console.error('Error de red al sincronizar tip:', error);
         }
       }
 
-      // Actualizar localStorage
-      if (failedTips.length > 0) {
-        localStorage.setItem('offlineTips', JSON.stringify(failedTips));
-        setPendingCount(failedTips.length);
-        console.warn(`${failedTips.length} tips no pudieron ser sincronizados`);
-        // Opcional: Notificar si algun tip falló permanentemente, pero mejor no spammear si sigue offline
-      } else {
-        localStorage.removeItem('offlineTips');
-        setPendingCount(0);
-        toast.success(`Se sincronizaron ${syncedTips.length} propinas guardadas offline`);
-        console.log(`✓ Todos los tips se sincronizaron correctamente (${syncedTips.length})`);
+      if (syncedCount > 0) {
+        toast.success(`Se sincronizaron ${syncedCount} propinas guardadas offline`);
       }
+
+      if (failedCount > 0) {
+        console.warn(`${failedCount} tips no pudieron ser sincronizados y permanecen offline.`);
+      }
+
     } catch (error) {
       console.error('Error en syncOfflineTips:', error);
     } finally {
@@ -82,7 +90,13 @@ export function useTips() {
     updatePendingCount();
 
     // Detectar estado de red inicial
-    setIsOffline(!navigator.onLine);
+    const isOnline = navigator.onLine;
+    setIsOffline(!isOnline);
+
+    // Si estamos online al cargar, intentar sincronizar pendientes de sesiones previas
+    if (isOnline) {
+      syncOfflineTips();
+    }
 
     const handleOnline = async () => {
       setIsOffline(false);
@@ -113,7 +127,6 @@ export function useTips() {
       waiterName,
       tipPercentage,
       createdAt: new Date().toISOString(),
-      userAgent: navigator.userAgent,
       idempotencyKey,
     };
 
@@ -123,7 +136,7 @@ export function useTips() {
       const result = await saveTipToDb({
         ...data,
         idempotencyKey
-      }, navigator.userAgent);
+      });
 
       if (!result.success) {
         throw new Error(result.error);

@@ -5,9 +5,25 @@ interface AdminHeaderProps {
     loading: boolean;
     onRefresh: () => void;
     onExport: () => void;
+    filters: { startDate?: string; endDate?: string };
+    onDateChange: (start?: Date, end?: Date) => void;
 }
 
-export function AdminHeader({ loading, onRefresh, onExport }: AdminHeaderProps) {
+export function AdminHeader({ loading, onRefresh, onExport, filters, onDateChange }: AdminHeaderProps) {
+    const handleStartChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value ? new Date(e.target.value) : undefined;
+        // Mantener end date existente
+        const end = filters.endDate ? new Date(filters.endDate) : undefined;
+        onDateChange(val, end);
+    };
+
+    const handleEndChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value ? new Date(e.target.value) : undefined;
+        // Mantener start date existente
+        const start = filters.startDate ? new Date(filters.startDate) : undefined;
+        onDateChange(start, val);
+    };
+
     return (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 sm:gap-6 pb-4 sm:pb-6 border-b border-monalisa-gold/20">
             <div>
@@ -20,7 +36,28 @@ export function AdminHeader({ loading, onRefresh, onExport }: AdminHeaderProps) 
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-monalisa-gold tracking-wide">
                     Panel de Control
                 </h1>
-                <p className="text-monalisa-silver/60 mt-1 sm:mt-2 text-sm sm:text-base md:text-lg font-light">Resumen de actividad Sunset Monalisa</p>
+
+                {/* Filtros de Fecha */}
+                <div className="flex flex-wrap items-center gap-2 mt-4">
+                    <div className="flex items-center gap-2 bg-monalisa-navy/50 border border-monalisa-gold/20 rounded-sm px-3 py-1.5 p-1">
+                        <span className="text-xs text-monalisa-silver/50 uppercase tracking-wider">Desde</span>
+                        <input
+                            type="date"
+                            className="bg-transparent text-white text-sm outline-none w-[110px] appearance-none [&::-webkit-calendar-picker-indicator]:invert-[0.6]"
+                            value={filters.startDate ? filters.startDate.split('T')[0] : ''}
+                            onChange={handleStartChange}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2 bg-monalisa-navy/50 border border-monalisa-gold/20 rounded-sm px-3 py-1.5 p-1">
+                        <span className="text-xs text-monalisa-silver/50 uppercase tracking-wider">Hasta</span>
+                        <input
+                            type="date"
+                            className="bg-transparent text-white text-sm outline-none w-[110px] appearance-none [&::-webkit-calendar-picker-indicator]:invert-[0.6]"
+                            value={filters.endDate ? filters.endDate.split('T')[0] : ''}
+                            onChange={handleEndChange}
+                        />
+                    </div>
+                </div>
             </div>
 
             {/* Botones de Acción */}

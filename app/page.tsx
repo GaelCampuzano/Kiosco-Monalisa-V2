@@ -21,7 +21,7 @@ import { Background } from "@/app/components/Background";
 import { SuccessAnimation } from "@/app/components/SuccessAnimation";
 
 export default function Kiosk() {
-  // Hooks personalizados y estado
+  // Hooks personalizados y estado para la gestión del kiosco
   const { saveTip, isOffline, isSyncing, pendingCount } = useTips();
   const [lang, setLang] = useState<Language>("es");
   const [step, setStep] = useState<KioskStep>("WAITER_INPUT");
@@ -39,6 +39,7 @@ export default function Kiosk() {
     setStep("CLIENT_SELECTION");
   };
 
+  // Maneja la selección de propina. El porcentaje viene de la configuración (ver lib/config.ts)
   const handleTipSelection = async (percentage: TipPercentage) => {
     setShowSuccessAnimation(true);
     setTimeout(() => setShowSuccessAnimation(false), 2000);

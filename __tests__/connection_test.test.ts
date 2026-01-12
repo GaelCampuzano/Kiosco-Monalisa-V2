@@ -12,10 +12,11 @@ describe('Database Connection', () => {
     it('should connect to the database and execute a query', async () => {
         try {
             const pool = await getDbPool();
-            const result = await pool.query('SELECT NOW() as now');
-            expect(result.rows).toHaveLength(1);
-            expect(result.rows[0].now).toBeDefined();
-            console.log('DB Connection Success:', result.rows[0].now);
+            const [rows] = await pool.query('SELECT NOW() as now');
+            const result = rows as any[];
+            expect(result).toHaveLength(1);
+            expect(result[0].now).toBeDefined();
+            console.log('DB Connection Success:', result[0].now);
         } catch (error) {
             console.error('DB Connection Failed:', error);
             throw error;

@@ -1,10 +1,13 @@
 import { useState, useCallback, useEffect } from "react";
 import { TipRecord } from "@/types";
-import { fetchAllTips } from "@/app/actions/tips";
+import { getTips, getTipsStats, TipsFilter } from "@/app/actions/tips";
 
 export function useAdminData() {
     const [tips, setTips] = useState<TipRecord[]>([]);
     const [loading, setLoading] = useState(true);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [filters, setFilters] = useState<TipsFilter>({});
 
     // Se asume que la autenticación de cookie (proxy) es suficiente.
     const [dbAuthenticated] = useState(true);
@@ -16,44 +19,43 @@ export function useAdminData() {
         topWaiter: "-"
     });
 
-    const calculateStats = (data: TipRecord[]) => {
-        if (data.length === 0) {
-            setStats({ totalTips: 0, avgPercentage: 0, topWaiter: "-" });
-            return;
-        }
-
-        const totalPct = data.reduce((acc, curr) => acc + curr.tipPercentage, 0);
-        const avg = (totalPct / data.length).toFixed(1);
-
-        const waiterCounts: Record<string, number> = {};
-        data.forEach(t => {
-            waiterCounts[t.waiterName] = (waiterCounts[t.waiterName] || 0) + 1;
-        });
-        const topWaiter = Object.entries(waiterCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "-";
-
-        setStats({
-            totalTips: data.length,
-            avgPercentage: Number(avg),
-            topWaiter
-        });
-    };
-
     const fetchTips = useCallback(async () => {
         setLoading(true);
         try {
-            const data = await fetchAllTips();
-            setTips(data);
-            calculateStats(data);
+            // Cargar datos y estadísticas en paralelo
+            const [dataRes, statsRes] = await Promise.all([
+                getTips(page, 20, filters),
+                getTipsStats(filters)
+            ]);
+
+            setTips(dataRes.data);
+            setTotalPages(dataRes.pages);
+            setStats(statsRes);
+
         } catch (error) {
-            console.error("Error al cargar propinas (MySQL Server Action):", error);
+            console.error("Error al cargar datos (MySQL Server Action):", error);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [page, filters]);
 
     useEffect(() => {
         fetchTips();
     }, [fetchTips]);
+
+    const setDateRange = (start?: Date, end?: Date) => {
+        setFilters(prev => ({
+            ...prev,
+            startDate: start?.toISOString(),
+            endDate: end?.toISOString()
+        }));
+        setPage(1); // Reset a primera página al filtrar
+    };
+
+    const setSearch = (term: string) => {
+        setFilters(prev => ({ ...prev, search: term }));
+        setPage(1);
+    };
 
     const exportCSV = (filteredTips: TipRecord[]) => {
         if (filteredTips.length === 0) {
@@ -62,13 +64,12 @@ export function useAdminData() {
         }
 
         // Crear encabezados CSV
-        const headers = ['Fecha', 'Mesa', 'Mesero', 'Propina (%)', 'User Agent'];
+        const headers = ['Fecha', 'Mesa', 'Mesero', 'Propina (%)'];
         const rows = filteredTips.map(tip => [
             new Date(tip.createdAt).toLocaleString(),
             tip.tableNumber,
             tip.waiterName,
-            tip.tipPercentage.toString(),
-            tip.userAgent || ''
+            tip.tipPercentage.toString()
         ]);
 
         // Combinar encabezados y filas
@@ -95,6 +96,12 @@ export function useAdminData() {
         stats,
         fetchTips,
         exportCSV,
-        dbAuthenticated
+        dbAuthenticated,
+        page,
+        setPage,
+        totalPages,
+        setDateRange,
+        setSearch,
+        filters
     };
 }

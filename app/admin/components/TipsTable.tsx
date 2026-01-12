@@ -1,19 +1,31 @@
 import { Search } from "lucide-react";
 import { TipRecord } from "@/types";
 
+import { ChevronLeft, ChevronRight } from "lucide-react";
+
 interface TipsTableProps {
     tips: TipRecord[];
     search: string;
     setSearch: (value: string) => void;
     loading: boolean;
     dbAuthenticated: boolean;
+    page: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
 }
 
-export function TipsTable({ tips, search, setSearch, loading, dbAuthenticated }: TipsTableProps) {
-    const filtered = tips.filter(t =>
-        t.waiterName.toLowerCase().includes(search.toLowerCase()) ||
-        t.tableNumber.toLowerCase().includes(search.toLowerCase())
-    );
+export function TipsTable({
+    tips,
+    search,
+    setSearch,
+    loading,
+    dbAuthenticated,
+    page,
+    totalPages,
+    onPageChange
+}: TipsTableProps) {
+    // Filtrado ahora es manejado en el servidor, usamos 'tips' directamente
+    const filtered = tips;
 
     return (
         <div className="bg-monalisa-navy/30 backdrop-blur-md rounded-sm border border-monalisa-gold/10 overflow-hidden shadow-2xl flex flex-col max-h-[600px]">
@@ -25,6 +37,11 @@ export function TipsTable({ tips, search, setSearch, loading, dbAuthenticated }:
                         placeholder="Buscar por mesero o mesa..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                // Opcional: Trigger search explicitly if needed, but hook handles it on change or debounce
+                            }
+                        }}
                         className="w-full bg-monalisa-navy/50 border border-monalisa-gold/20 rounded-sm py-2 sm:py-3 pl-10 sm:pl-12 pr-3 sm:pr-4 text-sm sm:text-base text-white placeholder:text-monalisa-silver/20 focus:border-monalisa-gold outline-none transition-all font-light focus:shadow-[0_0_15px_rgba(223,200,148,0.1)]"
                     />
                 </div>
@@ -38,17 +55,16 @@ export function TipsTable({ tips, search, setSearch, loading, dbAuthenticated }:
                             <th className="p-5 text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest whitespace-nowrap">Mesa</th>
                             <th className="p-5 text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest whitespace-nowrap">Mesero</th>
                             <th className="p-5 text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest whitespace-nowrap">Propina</th>
-                            <th className="p-5 text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest hidden lg:table-cell whitespace-nowrap">Dispositivo</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-monalisa-gold/5">
                         {loading || !dbAuthenticated ? (
-                            <tr><td colSpan={5} className="p-12 text-center text-monalisa-silver/50 italic animate-pulse">
+                            <tr><td colSpan={4} className="p-12 text-center text-monalisa-silver/50 italic animate-pulse">
                                 {dbAuthenticated ? "Cargando datos del servidor..." : "Error de conexión/autenticación."}
                             </td></tr>
                         ) : filtered.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="p-12 text-center text-monalisa-silver/50 italic">
+                                <td colSpan={4} className="p-12 text-center text-monalisa-silver/50 italic">
                                     {search ? 'No se encontraron registros que coincidan con la búsqueda.' : 'No se encontraron registros recientes.'}
                                 </td>
                             </tr>
@@ -88,9 +104,6 @@ export function TipsTable({ tips, search, setSearch, loading, dbAuthenticated }:
                                             {tip.tipPercentage}%
                                         </span>
                                     </td>
-                                    <td className="p-5 text-xs text-monalisa-silver/30 max-w-[150px] truncate hidden lg:table-cell group-hover:text-monalisa-silver/60 transition-colors">
-                                        {tip.userAgent}
-                                    </td>
                                 </tr>
                             ))
                         )}
@@ -98,8 +111,27 @@ export function TipsTable({ tips, search, setSearch, loading, dbAuthenticated }:
                 </table>
             </div>
 
-            <div className="p-4 bg-monalisa-gold/5 border-t border-monalisa-gold/10 text-center text-xs text-monalisa-silver/40 uppercase tracking-widest shrink-0">
-                Mostrando {filtered.length} registros
+            <div className="p-4 bg-monalisa-gold/5 border-t border-monalisa-gold/10 flex items-center justify-between shrink-0">
+                <div className="text-xs text-monalisa-silver/40 uppercase tracking-widest">
+                    Página {page} de {totalPages || 1}
+                </div>
+
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => onPageChange(page - 1)}
+                        disabled={page <= 1 || loading}
+                        className="p-1 sm:p-2 hover:bg-white/5 rounded-full disabled:opacity-30 disabled:cursor-not-allowed text-monalisa-gold transition-colors"
+                    >
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                        onClick={() => onPageChange(page + 1)}
+                        disabled={page >= totalPages || loading}
+                        className="p-1 sm:p-2 hover:bg-white/5 rounded-full disabled:opacity-30 disabled:cursor-not-allowed text-monalisa-gold transition-colors"
+                    >
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
+                </div>
             </div>
         </div>
     );

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { TipPercentage } from "@/types";
 import { TranslationType } from "@/lib/translations";
+import { TIP_PERCENTAGES } from "@/lib/config";
 
 interface TipSelectorProps {
     waiterName: string;
@@ -56,7 +57,7 @@ export function TipSelector({ waiterName, onTipSelect, onBack, text }: TipSelect
 
             {/* MEJORA RESPONSIVA: grid-cols-1 en móvil, grid-cols-3 en md (horizontal) */}
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-3 md:gap-8 lg:gap-12 px-4 max-w-6xl mx-auto w-full">
-                {[20, 23, 25].map((pct) => (
+                {TIP_PERCENTAGES.map((pct) => (
                     <motion.button
                         key={pct}
                         onClick={() => handleSelect(pct as TipPercentage)}

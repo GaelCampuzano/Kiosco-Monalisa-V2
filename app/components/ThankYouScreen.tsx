@@ -23,7 +23,7 @@ export function ThankYouScreen({ text }: ThankYouScreenProps) {
                 <div className="relative inline-block">
                     <Star className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mx-auto text-monalisa-gold fill-monalisa-gold/20 animate-pulse drop-shadow-[0_0_30px_rgba(223,200,148,0.6)]" />
 
-                    {/* Progress Circle acting as a timer -> Círculo de progreso actuando como temporizador */}
+                    {/*Círculo de progreso actuando como temporizador */}
                     <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 -rotate-90 pointer-events-none">
                         <motion.circle
                             cx="50%"

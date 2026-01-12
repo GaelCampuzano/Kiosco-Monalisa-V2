@@ -20,9 +20,9 @@ export async function login(prevState: unknown, formData: FormData) {
     }
 
     // 1. Validar configuración (Variables de entorno)
-    // SOLUCIÓN FINAL: Hardcode directo para eliminar cualquier duda de variables de entorno
-    const ADMIN_USER = 'admin';
-    const ADMIN_PASSWORD = 'admin';
+    // 1. Validar configuración (Variables de entorno)
+    const ADMIN_USER = process.env.ADMIN_USER;
+    const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
     // console.log("Debug Auth Check - User configured:", !!ADMIN_USER, "Password configured:", !!ADMIN_PASSWORD);
 
@@ -34,16 +34,6 @@ export async function login(prevState: unknown, formData: FormData) {
     // 2. Validar credenciales
     const userMatch = user.trim() === ADMIN_USER.trim();
     const passwordMatch = password === ADMIN_PASSWORD;
-
-    console.log(`Debug Login Attempt:
-      Received User: '${user}' (Length: ${user.length})
-      Expected User: '${ADMIN_USER}' (Length: ${ADMIN_USER?.length})
-      User Match: ${userMatch}
-      
-      Received Pass: '${password}' (Length: ${password.length})
-      Expected Pass: '${ADMIN_PASSWORD}' (Length: ${ADMIN_PASSWORD?.length})
-      Pass Match: ${passwordMatch}
-    `);
 
     if (userMatch && passwordMatch) {
       const cookieStore = await cookies();
