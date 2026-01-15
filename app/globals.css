@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @plugin "tailwindcss-animate";
 
@@ -6,14 +6,14 @@
 
 :root {
   /* Monalisa Original Palette */
-  --navy: #162B46;
-  --gold-light: #DFC894;
+  --navy: #162b46;
+  --gold-light: #dfc894;
   --gold-dark: #937737;
-  --silver: #B2B2B2;
+  --silver: #b2b2b2;
 
   /* Shadcn Semantic Mapping */
   --background: 214 52% 18%; /* Navy */
-  --foreground: 0 0% 70%;  /* Silver */
+  --foreground: 0 0% 70%; /* Silver */
 
   --card: 215 50% 12%; /* Darker Navy */
   --card-foreground: 0 0% 70%;
@@ -93,4 +93,28 @@ body {
 
 * {
   @apply border-border;
+}
+
+/* Custom Scrollbar for WebKit Browsers */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--navy);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--gold-dark);
+  border-radius: 5px;
+  border: 2px solid var(--navy); /* Creates padding effect */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold-light);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--navy);
 }

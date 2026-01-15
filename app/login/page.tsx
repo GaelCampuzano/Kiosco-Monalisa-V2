@@ -1,28 +1,25 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useSyncExternalStore } from "react";
-import { motion } from "framer-motion";
-import { useActionState } from "react";
-import { login } from "@/app/actions/auth";
-import { ArrowLeft, Lock, User, RefreshCw } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
+import { useState, useEffect, useSyncExternalStore } from 'react';
+import { motion } from 'framer-motion';
+import { useActionState } from 'react';
+import { login } from '@/app/actions/auth';
+import { ArrowLeft, Lock, User, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
 
 const initialState = {
   error: '',
+  code: '',
 };
 
 export default function LoginPage() {
   const [state, formAction, isPending] = useActionState(login, initialState);
   const [logoError, setLogoError] = useState(false);
-  const isOffline = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot
-  );
+  const isOffline = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function subscribe(callback: () => void) {
-    if (typeof window === 'undefined') return () => { };
+    if (typeof window === 'undefined') return () => {};
     window.addEventListener('online', callback);
     window.addEventListener('offline', callback);
     return () => {
@@ -41,15 +38,15 @@ export default function LoginPage() {
 
   // Pre-cargar y cachear logo cuando esté online
   useEffect(() => {
-    if (!isOffline && typeof window !== "undefined" && "caches" in window) {
+    if (!isOffline && typeof window !== 'undefined' && 'caches' in window) {
       const cacheLogo = async () => {
         try {
-          const cache = await caches.open("monalisa-images-v1");
-          const cached = await cache.match("/logo-monalisa.svg");
+          const cache = await caches.open('monalisa-images-v1');
+          const cached = await cache.match('/logo-monalisa.svg');
           if (!cached) {
-            const response = await fetch("/logo-monalisa.svg", { cache: "force-cache" });
+            const response = await fetch('/logo-monalisa.svg', { cache: 'force-cache' });
             if (response.ok) {
-              await cache.put("/logo-monalisa.svg", response);
+              await cache.put('/logo-monalisa.svg', response);
             }
           }
         } catch {
@@ -68,12 +65,16 @@ export default function LoginPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
         className="w-full max-w-md"
       >
         {/* Botón Volver al Kiosco */}
-        <Link href="/" className="group flex items-center gap-2 text-monalisa-silver/50 hover:text-monalisa-gold transition-colors mb-6 sm:mb-8 text-[10px] sm:text-xs font-bold tracking-widest uppercase w-fit">
-          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform" /> Regresar al Kiosco
+        <Link
+          href="/"
+          className="group flex items-center gap-2 text-monalisa-silver/50 hover:text-monalisa-gold transition-colors mb-6 sm:mb-8 text-[10px] sm:text-xs font-bold tracking-widest uppercase w-fit"
+        >
+          <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 group-hover:-translate-x-1 transition-transform" />{' '}
+          Regresar al Kiosco
         </Link>
 
         {/* Tarjeta de Login */}
@@ -83,12 +84,10 @@ export default function LoginPage() {
           animate={{ scale: 1 }}
           transition={{ delay: 0.1, duration: 0.5 }}
         >
-
           {/* Brillo superior decorativo */}
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-monalisa-gold/50 to-transparent opacity-50" />
 
           <div className="text-center mb-10">
-
             {/* LOGO CON SPOTLIGHT EN LOGIN */}
             <motion.div
               className="relative w-full h-24 sm:h-32 mx-auto mb-4 sm:mb-6 flex items-center justify-center hover:scale-105 transition-transform duration-500"
@@ -113,7 +112,9 @@ export default function LoginPage() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-monalisa-gold text-xl sm:text-2xl font-serif">Sunset Monalisa</span>
+                    <span className="text-monalisa-gold text-xl sm:text-2xl font-serif">
+                      Sunset Monalisa
+                    </span>
                   </div>
                 )}
               </div>
@@ -124,8 +125,12 @@ export default function LoginPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <h1 className="font-serif text-2xl sm:text-3xl text-white mb-2 tracking-wide">Acceso Administrativo</h1>
-              <p className="text-monalisa-silver/60 text-xs sm:text-sm font-light">Sistema de Gestión Sunset Monalisa</p>
+              <h1 className="font-serif text-2xl sm:text-3xl text-white mb-2 tracking-wide">
+                Acceso Administrativo
+              </h1>
+              <p className="text-monalisa-silver/60 text-xs sm:text-sm font-light">
+                Sistema de Gestión Sunset Monalisa
+              </p>
             </motion.div>
           </div>
 
@@ -137,7 +142,9 @@ export default function LoginPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <label className="text-xs font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">Usuario</label>
+              <label className="text-xs font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">
+                Usuario
+              </label>
               <div className="relative">
                 <User className="absolute left-4 top-3.5 w-5 h-5 text-monalisa-silver/30 group-focus-within:text-monalisa-gold transition-colors" />
                 <input
@@ -157,7 +164,9 @@ export default function LoginPage() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <label className="text-xs font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">Contraseña</label>
+              <label className="text-xs font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">
+                Contraseña
+              </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-3.5 w-5 h-5 text-monalisa-silver/30 group-focus-within:text-monalisa-gold transition-colors" />
                 <input

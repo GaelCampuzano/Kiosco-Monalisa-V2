@@ -1,9 +1,9 @@
-import { TIP_PERCENTAGES } from '@/lib/config';
+// import { TIP_PERCENTAGES } from '@/lib/config';
 
 /**
  * Definición de tipos para porcentajes de propina permitidos.
  */
-export type TipPercentage = typeof TIP_PERCENTAGES[number];
+export type TipPercentage = number;
 
 /**
  * Interfaz principal para el registro de propinas.

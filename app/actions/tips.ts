@@ -1,33 +1,27 @@
-'use server'
+'use server';
 
-import { TipRecord } from "@/types";
-import { getDbPool } from "@/lib/db";
-import { TIP_PERCENTAGES } from "@/lib/config";
-// [CORRECCIÓN CLAVE]: Importar RowDataPacket para el tipado correcto de consultas SELECT
-import { RowDataPacket } from 'mysql2/promise';
+import { TipRecord } from '@/types';
+import { getDbPool } from '@/lib/db';
+// import { TIP_PERCENTAGES } from "@/lib/config";
+// [CORRECCIÓN CLAVE]: Importar TipRow para el tipado correcto de consultas SELECT
+import { TipRow } from '@/types/db';
+import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
+
+import { TipSchema } from '@/lib/schemas';
 
 /**
  * Guarda un registro de propina en la base de datos MySQL.
  */
 export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'synced'>) {
   try {
-    // Validación básica de entrada
-    if (!data.tableNumber || !data.waiterName || !data.tipPercentage) {
-      return { success: false, error: 'Missing required fields' };
+    const validation = TipSchema.safeParse(data);
+
+    if (!validation.success) {
+      console.error('Validation error:', validation.error.format());
+      return { success: false, error: validation.error.errors[0].message };
     }
 
-    // @ts-ignore - Validamos que el porcentaje esté en la lista permitida en lib/config.ts
-    if (!TIP_PERCENTAGES.includes(data.tipPercentage as any)) {
-      return { success: false, error: 'Invalid tip percentage' };
-    }
-
-    if (data.tableNumber.length > 50) {
-      return { success: false, error: 'Table number too long' };
-    }
-
-    if (data.waiterName.length > 255) {
-      return { success: false, error: 'Waiter name too long' };
-    }
+    const validData = validation.data;
 
     const pool = await getDbPool();
 
@@ -37,37 +31,40 @@ export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'sy
       VALUES (?, ?, ?, ?)
     `;
 
-    const [result] = await pool.execute(
-      query,
-      [
-        data.tableNumber.trim(),
-        data.waiterName.trim(),
-        data.tipPercentage,
-        data.idempotencyKey || null
-      ]
-    );
+    const [result] = await pool.execute(query, [
+      validData.tableNumber,
+      validData.waiterName,
+      validData.tipPercentage,
+      validData.idempotencyKey || null,
+    ]);
 
     // Verifica que la inserción haya sido exitosa
-    if ((result as any).affectedRows === 0) {
+    if ((result as ResultSetHeader).affectedRows === 0) {
       throw new Error('MySQL insert failed, no rows affected.');
     }
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Si es un error de duplicado por idempotency_key, lo consideramos éxito (ya se guardó antes)
-    if (error.code === 'ER_DUP_ENTRY' && error.sqlMessage?.includes('idempotency_key')) {
-      console.warn("Duplicate tip detected (idempotency), treating as success.");
+    if (
+      (error as { code?: string }).code === 'ER_DUP_ENTRY' &&
+      (error as { sqlMessage?: string }).sqlMessage?.includes('idempotency_key')
+    ) {
+      console.warn('Duplicate tip detected (idempotency), treating as success.');
       return { success: true };
     }
 
-    console.error("Error al guardar propina en MySQL:", error);
+    console.error('Error al guardar propina en MySQL:', error);
     // Devuelve un error para activar el modo offline/fallback en el cliente
     // [DEBUG]: Devolvemos el mensaje real del error para depuración
-    return { success: false, error: `Database save failed: ${error.message || String(error)}` };
+    return {
+      success: false,
+      error: `Database save failed: ${(error as Error).message || String(error)}`,
+    };
   }
 }
 
-import { cookies } from 'next/headers';
+import { requireAuth, verifySession } from '@/lib/auth-check';
 
 export type TipsFilter = {
   startDate?: string;
@@ -89,43 +86,23 @@ export type PaginatedResponse = {
 export async function getTips(
   page: number = 1,
   limit: number = 20,
-  filters?: TipsFilter
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _filters?: TipsFilter
 ): Promise<PaginatedResponse> {
-  const cookieStore = await cookies();
-  const authCookie = cookieStore.get('monalisa_admin_session');
-
-  if (!authCookie || authCookie.value !== 'authenticated') {
-    throw new Error("Unauthorized");
-  }
-
   try {
+    await requireAuth();
     const pool = await getDbPool();
     const offset = (page - 1) * limit;
 
     // Construcción dinámica de filtros
-    let whereClause = "1=1";
-    const queryParams: any[] = [];
-
-    if (filters?.startDate) {
-      whereClause += " AND createdAt >= ?";
-      queryParams.push(filters.startDate);
-    }
-
-    if (filters?.endDate) {
-      whereClause += " AND createdAt <= ?";
-      queryParams.push(new Date(new Date(filters.endDate).setHours(23, 59, 59, 999)));
-    }
-
-    if (filters?.search) {
-      whereClause += " AND (waiterName LIKE ? OR tableNumber LIKE ?)";
-      const term = `%${filters.search}%`;
-      queryParams.push(term, term);
-    }
+    const whereClause = '1=1';
+    const queryParams: (string | number | Date)[] = [];
 
     // 1. Obtener total de registros para paginación
     const countQuery = `SELECT COUNT(*) as total FROM tips WHERE ${whereClause}`;
     const [countRows] = await pool.query<RowDataPacket[]>(countQuery, queryParams);
-    const total = (countRows[0] as any).total;
+    // [FIX]: Convertir BigInt a Number para evitar error de serialización en Server Actions
+    const total = Number(countRows[0]?.total || 0);
     const pages = Math.ceil(total / limit);
 
     // 2. Obtener datos paginados
@@ -140,9 +117,9 @@ export async function getTips(
     // Añadir limit y offset al final de los params
     queryParams.push(limit, offset);
 
-    const [rows] = await pool.query<RowDataPacket[]>(dataQuery, queryParams);
+    const [rows] = await pool.query<TipRow[]>(dataQuery, queryParams);
 
-    const data = (rows as RowDataPacket[]).map(tip => ({
+    const data = (rows as TipRow[]).map((tip) => ({
       id: tip.id?.toString() || '',
       tableNumber: tip.tableNumber.toString(),
       waiterName: tip.waiterName,
@@ -155,24 +132,14 @@ export async function getTips(
       data,
       total,
       pages,
-      currentPage: page
+      currentPage: page,
     };
-
   } catch (error) {
-    console.error("Error al cargar propinas paginadas:", error);
-    // Retornar estructura vacía en caso de error para no romper la UI
+    console.error('Error al cargar propinas paginadas:', error);
+    // [DEBUG]: Log error detail
+    if (error instanceof Error) console.error(error.stack);
     return { data: [], total: 0, pages: 0, currentPage: 1 };
   }
-}
-
-/**
- * Mantenemos fetchAllTips para retrocompatibilidad temporal si es necesario, 
- * pero idealmente debería eliminarse o redirigir a getTips.
- */
-export async function fetchAllTips(): Promise<TipRecord[]> {
-  // Wrapper simple para no romper usages existentes inmediatamente
-  const result = await getTips(1, 1000);
-  return result.data;
 }
 
 export type TipsStats = {
@@ -185,34 +152,16 @@ export type TipsStats = {
  * Calcula estadísticas agregadas basadas en los filtros actuales.
  */
 export async function getTipsStats(filters?: TipsFilter): Promise<TipsStats> {
-  const cookieStore = await cookies();
-  const authCookie = cookieStore.get('monalisa_admin_session');
-
-  if (!authCookie || authCookie.value !== 'authenticated') {
+  const isAuth = await verifySession();
+  if (!isAuth) {
     return { totalTips: 0, avgPercentage: 0, topWaiter: '-' };
   }
 
   try {
     const pool = await getDbPool();
 
-    let whereClause = "1=1";
-    const queryParams: any[] = [];
-
-    if (filters?.startDate) {
-      whereClause += " AND createdAt >= ?";
-      queryParams.push(filters.startDate);
-    }
-
-    if (filters?.endDate) {
-      whereClause += " AND createdAt <= ?";
-      queryParams.push(new Date(new Date(filters.endDate).setHours(23, 59, 59, 999)));
-    }
-
-    if (filters?.search) {
-      whereClause += " AND (waiterName LIKE ? OR tableNumber LIKE ?)";
-      const term = `%${filters.search}%`;
-      queryParams.push(term, term);
-    }
+    // Construcción dinámica de filtros usando el helper
+    const { whereClause, queryParams } = buildTipsQuery(filters);
 
     // Calcular Promedio y Total
     const statsQuery = `
@@ -223,8 +172,8 @@ export async function getTipsStats(filters?: TipsFilter): Promise<TipsStats> {
       WHERE ${whereClause}
     `;
     const [statsRows] = await pool.query<RowDataPacket[]>(statsQuery, queryParams);
-    const total = (statsRows[0] as any).total || 0;
-    const avg = Number((statsRows[0] as any).average || 0);
+    const total = Number(statsRows[0]?.total || 0);
+    const avg = Number(statsRows[0]?.average || 0);
 
     // Calcular Top Waiter (requiere subconsulta o group by separado)
     const waiterQuery = `
@@ -236,16 +185,76 @@ export async function getTipsStats(filters?: TipsFilter): Promise<TipsStats> {
       LIMIT 1
     `;
     const [waiterRows] = await pool.query<RowDataPacket[]>(waiterQuery, queryParams);
-    const topWaiter = (waiterRows[0] as any)?.waiterName || "-";
+    const topWaiter = waiterRows[0]?.waiterName || '-';
 
     return {
       totalTips: total,
       avgPercentage: parseFloat(avg.toFixed(1)),
-      topWaiter
+      topWaiter,
     };
-
   } catch (error) {
-    console.error("Error calculating stats:", error);
+    console.error('Error calculating stats:', error);
     return { totalTips: 0, avgPercentage: 0, topWaiter: '-' };
   }
+}
+
+/**
+ * Obtiene TODAS las propinas que coinciden con los filtros para exportación.
+ * Sin paginación (o con un límite muy alto de seguridad).
+ */
+export async function exportTipsCSV(filters?: TipsFilter): Promise<TipRecord[]> {
+  try {
+    await requireAuth();
+    const pool = await getDbPool();
+    const { whereClause, queryParams } = buildTipsQuery(filters);
+
+    const query = `
+      SELECT id, tableNumber, waiterName, tipPercentage, createdAt 
+      FROM tips 
+      WHERE ${whereClause}
+      ORDER BY createdAt DESC
+      LIMIT 10000 
+    `; // Límite de seguridad de 10k registros
+
+    const [rows] = await pool.query<TipRow[]>(query, queryParams);
+
+    return (rows as TipRow[]).map((tip) => ({
+      id: tip.id?.toString() || '',
+      tableNumber: tip.tableNumber.toString(),
+      waiterName: tip.waiterName,
+      tipPercentage: tip.tipPercentage,
+      createdAt: tip.createdAt.toString(),
+      synced: true,
+    })) as TipRecord[];
+  } catch (error) {
+    console.error('Error fetching tips for export:', error);
+    throw new Error('Failed to fetch tips for export');
+  }
+}
+
+/**
+ * Helper privado para construir la cláusula WHERE y parámetros.
+ * Evita duplicación de lógica de filtrado.
+ */
+function buildTipsQuery(filters?: TipsFilter) {
+  let whereClause = '1=1';
+  const queryParams: (string | number | Date)[] = [];
+
+  if (filters?.startDate) {
+    whereClause += ' AND createdAt >= ?';
+    queryParams.push(filters.startDate);
+  }
+
+  if (filters?.endDate) {
+    whereClause += ' AND createdAt <= ?';
+    queryParams.push(new Date(new Date(filters.endDate).setHours(23, 59, 59, 999)));
+  }
+
+  if (filters?.search) {
+    whereClause += ' AND (waiterName LIKE ? OR tableNumber LIKE ?)';
+    const term = `%${filters.search}%`;
+    queryParams.push(term, term);
+  }
+
+  return { whereClause, queryParams };
 }

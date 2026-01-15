@@ -1,129 +1,143 @@
-import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { TranslationType } from "@/lib/translations";
-import { WaiterAutocomplete } from "./WaiterAutocomplete";
+import { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
+import { TranslationType } from '@/lib/translations';
+import { WaiterAutocomplete } from './WaiterAutocomplete';
 
 interface WaiterFormProps {
-    tableNumber: string;
-    setTableNumber: (value: string) => void;
-    waiterName: string;
-    setWaiterName: (value: string) => void;
-    onSubmit: () => void;
-    text: TranslationType;
+  tableNumber: string;
+  setTableNumber: (value: string) => void;
+  waiterName: string;
+  setWaiterName: (value: string) => void;
+  onSubmit: () => void;
+  text: TranslationType;
 }
 
 export function WaiterForm({
-    tableNumber,
-    setTableNumber,
-    waiterName,
-    setWaiterName,
-    onSubmit,
-    text
+  tableNumber,
+  setTableNumber,
+  waiterName,
+  setWaiterName,
+  onSubmit,
+  text,
 }: WaiterFormProps) {
-    const [logoError, setLogoError] = useState(false);
+  const [logoError, setLogoError] = useState(false);
+  const [isWaiterValid, setIsWaiterValid] = useState(false);
 
-    const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-    useEffect(() => {
-        // Auto-enfoque con un ligero retraso para permitir que la animación comience
-        const timer = setTimeout(() => {
-            inputRef.current?.focus();
-        }, 500);
-        return () => clearTimeout(timer);
-    }, []);
+  useEffect(() => {
+    // Auto-enfoque con un ligero retraso para permitir que la animación comience
+    const timer = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (waiterName && tableNumber) {
-            onSubmit();
-        }
-    };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (waiterName && tableNumber && isWaiterValid) {
+      onSubmit();
+    }
+  };
 
-    return (
-        <motion.div
-            key="waiter"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="w-full max-w-md bg-[#162B46]/40 backdrop-blur-xl border border-white/10 p-6 sm:p-8 md:p-12 rounded-sm shadow-2xl"
+  return (
+    <motion.div
+      key="waiter"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="w-full max-w-md bg-[#162B46]/40 backdrop-blur-xl border border-white/10 p-6 sm:p-8 md:p-12 rounded-sm shadow-2xl"
+    >
+      <div className="text-center mb-6 sm:mb-8">
+        {/* LOGO CON EFECTO SPOTLIGHT (LUZ RADIAL) */}
+        <div className="relative w-full h-24 sm:h-32 mx-auto mb-4 sm:mb-6 flex items-center justify-center">
+          {/* Capa de luz de fondo difusa */}
+          <div className="absolute inset-0 bg-[radial-gradient(closest-side,rgba(255,255,255,0.8)_20%,transparent_100%)] blur-xl" />
+
+          {/* Logo encima */}
+          <div className="relative w-48 h-20 sm:w-64 sm:h-28">
+            {!logoError ? (
+              <Image
+                src="/logo-monalisa.svg"
+                alt="Logo Sunset Monalisa"
+                fill
+                className="object-contain"
+                onError={() => setLogoError(true)}
+                onLoad={() => setLogoError(false)}
+              />
+            ) : null}
+            {logoError && (
+              <div className="w-full h-full flex items-center justify-center">
+                <span className="text-monalisa-gold text-xl sm:text-2xl font-serif">
+                  Sunset Monalisa
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <h1 className="font-serif text-2xl sm:text-3xl text-white tracking-wide drop-shadow-sm border-t border-white/10 pt-4 sm:pt-6">
+          {text.waiterTitle}
+        </h1>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
+        <div className="group">
+          <label className="block text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest mb-2 ml-1">
+            {text.table}
+          </label>
+          <input
+            type="text"
+            required
+            value={tableNumber}
+            maxLength={3}
+            onChange={(e) => {
+              const value = e.target.value.replace(/[^0-9]/g, '');
+              if (value.length <= 3) {
+                setTableNumber(value);
+              }
+            }}
+            ref={inputRef}
+            className="w-full bg-black/20 border border-white/10 focus:border-monalisa-gold rounded-sm text-white text-xl sm:text-2xl py-2.5 sm:py-3 px-4 outline-none transition-all font-serif placeholder:text-white/10 text-center"
+            placeholder="#"
+          />
+        </div>
+
+        <div className="group relative">
+          <label className="block text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest mb-2 ml-1">
+            {text.waiter}
+          </label>
+          <WaiterAutocomplete
+            value={waiterName}
+            onChange={setWaiterName}
+            onValidityChange={setIsWaiterValid}
+            placeholder={text.waiterPlaceholder}
+          />
+        </div>
+
+        <motion.button
+          type="submit"
+          disabled={!waiterName || !tableNumber || !isWaiterValid}
+          whileTap={{ scale: 0.98 }}
+          whileHover={{ scale: 1.02 }}
+          className={`w-full mt-4 sm:mt-6 py-3 sm:py-4 px-6 rounded-sm font-bold tracking-[0.15em] uppercase text-xs transition-colors duration-300 shadow-lg relative overflow-hidden group ${
+            !waiterName || !tableNumber || !isWaiterValid
+              ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+              : 'bg-monalisa-bronze text-white hover:bg-monalisa-gold hover:text-monalisa-navy hover:shadow-monalisa-gold/20'
+          }`}
         >
-            <div className="text-center mb-6 sm:mb-8">
-
-                {/* LOGO CON EFECTO SPOTLIGHT (LUZ RADIAL) */}
-                <div className="relative w-full h-24 sm:h-32 mx-auto mb-4 sm:mb-6 flex items-center justify-center">
-                    {/* Capa de luz de fondo difusa */}
-                    <div className="absolute inset-0 bg-[radial-gradient(closest-side,rgba(255,255,255,0.8)_20%,transparent_100%)] blur-xl" />
-
-                    {/* Logo encima */}
-                    <div className="relative w-48 h-20 sm:w-64 sm:h-28">
-                        {!logoError ? (
-                            <Image
-                                src="/logo-monalisa.svg"
-                                alt="Logo Sunset Monalisa"
-                                fill
-                                className="object-contain"
-                                onError={() => setLogoError(true)}
-                                onLoad={() => setLogoError(false)}
-                            />
-                        ) : null}
-                        {logoError && (
-                            <div className="w-full h-full flex items-center justify-center">
-                                <span className="text-monalisa-gold text-xl sm:text-2xl font-serif">Sunset Monalisa</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                <h1 className="font-serif text-2xl sm:text-3xl text-white tracking-wide drop-shadow-sm border-t border-white/10 pt-4 sm:pt-6">
-                    {text.waiterTitle}
-                </h1>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
-                <div className="group">
-                    <label className="block text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest mb-2 ml-1">{text.table}</label>
-                    <input
-                        type="text"
-                        required
-                        value={tableNumber}
-                        maxLength={3}
-                        onChange={(e) => {
-                            const value = e.target.value.replace(/[^0-9]/g, '');
-                            if (value.length <= 3) {
-                                setTableNumber(value);
-                            }
-                        }}
-                        ref={inputRef}
-                        className="w-full bg-black/20 border border-white/10 focus:border-monalisa-gold rounded-sm text-white text-xl sm:text-2xl py-2.5 sm:py-3 px-4 outline-none transition-all font-serif placeholder:text-white/10 text-center"
-                        placeholder="#"
-                    />
-                </div>
-
-                <div className="group relative">
-                    <label className="block text-xs font-bold text-monalisa-gold/80 uppercase tracking-widest mb-2 ml-1">{text.waiter}</label>
-                    <WaiterAutocomplete
-                        value={waiterName}
-                        onChange={setWaiterName}
-                        placeholder={text.waiterPlaceholder}
-                    />
-                </div>
-
-                <motion.button
-                    type="submit"
-                    whileTap={{ scale: 0.98 }}
-                    whileHover={{ scale: 1.02 }}
-                    className="w-full mt-4 sm:mt-6 bg-monalisa-bronze text-white py-3 sm:py-4 px-6 rounded-sm font-bold tracking-[0.15em] uppercase text-xs hover:bg-monalisa-gold hover:text-monalisa-navy transition-colors duration-300 shadow-lg hover:shadow-monalisa-gold/20 relative overflow-hidden group"
-                >
-                    <span className="relative z-10">{text.btnDeliver}</span>
-                    {/* Efecto de Brillo */}
-                    <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
-                        animate={{ x: ['-200%', '200%'] }}
-                        transition={{ duration: 2.5, repeat: Infinity, ease: "linear", repeatDelay: 1 }}
-                    />
-                </motion.button>
-            </form>
-        </motion.div>
-    );
+          <span className="relative z-10">{text.btnDeliver}</span>
+          {/* Efecto de Brillo solo si está habilitado */}
+          {waiterName && tableNumber && isWaiterValid && (
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12"
+              animate={{ x: ['-200%', '200%'] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'linear', repeatDelay: 1 }}
+            />
+          )}
+        </motion.button>
+      </form>
+    </motion.div>
+  );
 }
