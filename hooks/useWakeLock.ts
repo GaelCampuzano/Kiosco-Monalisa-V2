@@ -43,7 +43,7 @@ export function useWakeLock() {
       } else {
         // Liberar cuando se oculta
         if (wakeLock.current) {
-          wakeLock.current.release().catch(() => { });
+          wakeLock.current.release().catch(() => {});
           wakeLock.current = null;
         }
       }
@@ -53,7 +53,7 @@ export function useWakeLock() {
 
     return () => {
       if (wakeLock.current) {
-        wakeLock.current.release().catch(() => { });
+        wakeLock.current.release().catch(() => {});
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };

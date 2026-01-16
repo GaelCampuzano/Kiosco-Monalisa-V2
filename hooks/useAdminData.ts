@@ -3,15 +3,18 @@ import { toast } from 'sonner';
 import { TipRecord } from '@/types';
 import { getTips, getTipsStats, exportTipsCSV, TipsFilter } from '@/app/actions/tips';
 
+/**
+ * Hook personalizado para gestionar la lógica de datos del Panel de Administración.
+ * Centraliza el estado, la carga de datos y las operaciones de exportación.
+ *
+ * @returns Objeto con estados (tips, loading, stats) y funciones (fetchTips, exportCSV, setter de filtros).
+ */
 export function useAdminData() {
   const [tips, setTips] = useState<TipRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState<TipsFilter>({});
-
-  // Se asume que la autenticación de cookie (proxy) es suficiente.
-  const [dbAuthenticated] = useState(true);
 
   // Simple debounce utility (inside hook or imported)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,15 +33,13 @@ export function useAdminData() {
     topWaiter: '-',
   });
 
+  /**
+   * Carga los datos de propinas y estadísticas actuales desde el servidor.
+   * Se ejecuta automáticamente cuando cambian la página o los filtros.
+   */
   const fetchTips = useCallback(async () => {
     setLoading(true);
     try {
-      // [DEBUG] Cargar datos por separado para aislar el error
-      // const [dataRes, statsRes] = await Promise.all([
-      //     getTips(page, 20, filters),
-      //     getTipsStats(filters)
-      // ]);
-
       let dataRes, statsRes;
 
       try {
@@ -69,6 +70,10 @@ export function useAdminData() {
     fetchTips();
   }, [fetchTips]);
 
+  /**
+   * Actualiza el rango de fechas para el filtrado.
+   * Reinicia la paginación a la página 1.
+   */
   const setDateRange = (start?: Date, end?: Date) => {
     setFilters((prev) => ({
       ...prev,
@@ -78,13 +83,7 @@ export function useAdminData() {
     setPage(1); // Reset a primera página al filtrar
   };
 
-  // Debounce implementation would go here, but since the requirement is to "Implement debouncing in search",
-  // and this hook exposes `setSearch` which triggers fetch immediately via useEffect...
-  // The "Debounce" should happen in the UI component calling `setSearch`.
-  // However, if we want it here, we need a separate state for the input vs the filter.
-  // Let's assume the UI component handles the text input state and calls `setSearch` (now debounced by the caller or we provide a debounced callback).
-  // Actually, "Implementar debouncing en la búsqueda". I will add a debounced version here to be safe and robust.
-
+  // Debounce implementation for search
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSetSearch = useCallback(
     debounce((term: string) => {
@@ -98,6 +97,10 @@ export function useAdminData() {
     debouncedSetSearch(term);
   };
 
+  /**
+   * Exporta los datos filtrados a un archivo CSV.
+   * Maneja la descarga en el navegador del usuario.
+   */
   const exportCSV = async () => {
     try {
       toast.loading('Generando reporte completo...');
@@ -153,7 +156,6 @@ export function useAdminData() {
     stats,
     fetchTips,
     exportCSV,
-    dbAuthenticated,
     page,
     setPage,
     totalPages,

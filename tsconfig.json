@@ -20,7 +20,7 @@
     ],
     "paths": {
       // Usar la ruta de raíz (./) es la más inclusiva para tu estructura
-      "@/*": ["./*"] 
+      "@/*": ["./*"]
     }
   },
   "include": [

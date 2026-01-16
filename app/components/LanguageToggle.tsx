@@ -12,7 +12,7 @@ export function LanguageToggle({ lang, setLang }: LanguageToggleProps) {
   return (
     <div className="absolute top-4 left-4 sm:top-8 sm:left-8 z-30 flex gap-1 sm:gap-2 p-1 bg-black/20 backdrop-blur-md rounded-full border border-white/5">
       {/* Botones de cambio de idioma */}
-      {["es", "en"].map((l) => (
+      {['es', 'en'].map((l) => (
         <button
           key={l}
           onClick={() => setLang(l as Language)}
@@ -22,10 +22,12 @@ export function LanguageToggle({ lang, setLang }: LanguageToggleProps) {
             <motion.div
               layoutId="active-lang"
               className="absolute inset-0 bg-monalisa-gold rounded-full -z-10 shadow-[0_0_15px_rgba(223,200,148,0.3)]"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             />
           )}
-          <span className={`relative transition-colors duration-200 ${lang === l ? 'text-monalisa-navy' : 'text-white/60 hover:text-white'}`}>
+          <span
+            className={`relative transition-colors duration-200 ${lang === l ? 'text-monalisa-navy' : 'text-white/60 hover:text-white'}`}
+          >
             {l}
           </span>
         </button>

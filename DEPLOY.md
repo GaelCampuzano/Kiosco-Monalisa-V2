@@ -1,6 +1,6 @@
 # Guía de Despliegue en Producción (Windows)
 
-Esta guía detalla cómo preparar y ejecutar la aplicación **Kiosco Monalisa V2** en un entorno de producción utilizando Windows, asegurando que se reinicie automáticamente si el servidor se apaga.
+Esta guía detalla cómo preparar y ejecutar la aplicación **Kiosco Monalisa V2** en un entorno de producción.
 
 ## 1. Prerrequisitos
 
@@ -19,75 +19,28 @@ npm run build
 
 > **Nota**: Debes ejecutar esto cada vez que hagas cambios en el código.
 
-## 3. Instalación de PM2
+## 3. Ejecución y Automatización
 
-[PM2](https://pm2.keymetrics.io/) es un gestor de procesos que mantendrá tu aplicación viva 24/7.
+Hemos creado dos archivos `.bat` en la carpeta del proyecto para facilitar todo:
 
-```powershell
-# Instalar PM2 globalmente
-npm install -g pm2
-```
+### A. Para el uso diario (Inicio Automático)
 
-## 4. Ejecutar la Aplicación con PM2
+Usa el archivo **`start-kiosco.bat`**.
 
-Para máxima estabilidad en Windows, hemos creado un archivo de configuración `ecosystem.config.js` que maneja los detalles técnicos.
+**Para que inicie automáticamente con Windows:**
 
-```powershell
-# Iniciar la app usando la configuración guardada
-pm2 start ecosystem.config.js
-```
+1.  Presiona `Windows + R` en tu teclado.
+2.  Escribe `shell:startup` y presiona Enter. Se abrirá una carpeta.
+3.  Crea un **Acceso Directo** del archivo `start-kiosco.bat` y pégalo dentro de esa carpeta de inicio.
+    - _Nota:_ Esto iniciará la app automáticamente cada vez que inicies sesión en la PC.
 
-### Comandos útiles de PM2:
+### B. Para Actualizar (Despliegue)
 
-- **Guardar cambios**: `pm2 save` (Esencial después de cualquier cambio de configuración)
-- **Ver estado**: `pm2 status`
-- **Ver logs**: `pm2 logs kiosco-monalisa`
-- **Reiniciar**: `pm2 restart kiosco-monalisa`
-- **Detener**: `pm2 stop kiosco-monalisa`
-- **Eliminar**: `pm2 delete kiosco-monalisa`
+Usa el archivo **`update-kiosco.bat`**.
+Ejecuta este archivo manualmente cuando sepas que hay cambios en el código. Este script se encargará de:
 
-## 5. Configurar Inicio Automático en Windows
+1.  Descargar el código nuevo (`git pull`).
+2.  Instalar librerías (`npm install`).
+3.  Compilar la app (`npm run build`).
 
-Para que la aplicación se inicie sola cuando se reinicia la computadora o el servidor, necesitamos instalar un complemento para servicios de Windows.
-
-### Opción A: Usando `pm2-startup` (Recomendado)
-
-1.  **Instalar el paquete de soporte para Windows:**
-
-    ```powershell
-    npm install -g pm2-windows-startup
-    ```
-
-2.  **Instalar el script de inicio:**
-
-    ```powershell
-    pm2-startup install
-    ```
-
-3.  **Guardar la lista de procesos actuales:**
-    Asegúrate de que tu app ya esté corriendo (Paso 4) y luego ejecuta:
-    ```powershell
-    pm2 save
-    ```
-
-¡Listo! Ahora, si reinicias Windows, PM2 arrancará automáticamente y levantará el Kiosco Monalisa en segundo plano.
-
-## 6. Actualizar la Aplicación
-
-Cuando haya cambios en el código (git pull), el proceso es:
-
-1.  Descargar cambios: `git pull`
-2.  Instalar dependencias nuevas (si hay): `npm install`
-3.  Reconstruir: `npm run build`
-4.  Reiniciar proceso: `pm2 restart kiosco-monalisa`
-
-## 7. Solución de Problemas
-
-**Si PM2 no inicia al reiniciar:**
-
-- Verifica que el usuario de Windows tenga contraseña (a veces el auto-login sin contraseña da problemas con servicios).
-- Intenta ejecutar PowerShell como Administrador al instalar `pm2-startup`.
-
-**Si la app falla:**
-
-- Revisa los logs: `pm2 logs kiosco-monalisa`
+> **Importante**: No pongas `update-kiosco.bat` en el inicio automático, ya que haría el arranque de la PC muy lento innecesariamente. Solo úsalo cuando necesites actualizar.

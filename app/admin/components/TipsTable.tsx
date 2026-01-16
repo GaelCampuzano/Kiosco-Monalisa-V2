@@ -9,7 +9,7 @@ interface TipsTableProps {
   search: string;
   setSearch: (value: string) => void;
   loading: boolean;
-  dbAuthenticated: boolean;
+
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -20,7 +20,6 @@ export function TipsTable({
   search,
   setSearch,
   loading,
-  dbAuthenticated,
   page,
   totalPages,
   onPageChange,
@@ -67,7 +66,7 @@ export function TipsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-monalisa-gold/5">
-            {loading || !dbAuthenticated ? (
+            {loading ? (
               <TableSkeleton columns={4} rows={6} />
             ) : filtered.length === 0 ? (
               <tr>

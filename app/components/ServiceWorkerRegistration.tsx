@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
+import { useEffect } from 'react';
 
 // Usamos export default para que el layout lo encuentre correctamente
 // Este componente registra el Service Worker para capacidades PWA y offline

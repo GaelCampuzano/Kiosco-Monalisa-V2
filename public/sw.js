@@ -1,19 +1,13 @@
 // Service Worker optimizado para Kiosco Monalisa
 const CACHE_NAME = 'monalisa-kiosco-v2';
-const urlsToCache = [
-  '/',
-  '/manifest.json',
-  '/bkg.jpg',
-  '/logo-monalisa.svg',
-];
+const urlsToCache = ['/', '/manifest.json', '/bkg.jpg', '/logo-monalisa.svg'];
 
 // Instalación: Cachear activos esenciales
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(urlsToCache);
+    })
   );
   self.skipWaiting();
 });

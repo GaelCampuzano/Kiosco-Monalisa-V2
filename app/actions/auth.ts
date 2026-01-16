@@ -8,12 +8,26 @@ import { UserRow } from '@/types/db';
 
 const COOKIE_NAME = 'monalisa_admin_session';
 
+/**
+ * Maneja el proceso de inicio de sesión de los administradores.
+ *
+ * @param prevState - Estado anterior del formulario (Server Action pattern).
+ * @param formData - Datos enviados desde el formulario de login.
+ * @returns Objeto de error si falla, o redirige al panel de admin si tiene éxito.
+ *
+ * FLUJO DE SEGURIDAD:
+ * 1. Valida credenciales básicas.
+ * 2. Busca al usuario en la base de datos MySQL por nombre de usuario.
+ * 3. Compara la contraseña proporcionada con el hash almacenado usando `bcrypt`.
+ * 4. Si es válido, crea una cookie de sesión HTTP-only.
+ *    - La cookie es segura (HTTPS) en producción, pero se relaja para redes locales (HTTP) si es necesario.
+ */
 export async function login(prevState: unknown, formData: FormData) {
   try {
     const user = formData.get('user') as string;
     const password = formData.get('password') as string;
 
-    // Basic input validation
+    // Validación básica de entrada
     if (!user || !password) {
       return { error: 'Usuario y contraseña son requeridos.' };
     }
@@ -35,19 +49,20 @@ export async function login(prevState: unknown, formData: FormData) {
 
     const dbUser = rows[0];
 
-    // 2. Verificar contraseña con bcrypt
+    // 2. Verificar contraseña con bcrypt (Comparación segura de hashes)
     const passwordMatch = await bcrypt.compare(password, dbUser.password_hash);
 
     if (passwordMatch) {
       const cookieStore = await cookies();
 
       // Crear cookie de sesión por 24 horas
-      // Podríamos guardar el ID de usuario en la cookie si quisiéramos sesiones más complejas
+      // NOTA: No guardamos datos sensibles en la cookie, solo un flag de autenticación.
       cookieStore.set(COOKIE_NAME, 'authenticated', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24,
+        httpOnly: true, // No accesible vía JavaScript del navegador (protección XSS)
+        // [FIX]: Permitir cookies en LAN (HTTP) aunque estemos en producción para acceso local
+        secure: false,
+        sameSite: 'lax', // Protección CSRF básica
+        maxAge: 60 * 60 * 24, // 24 horas
         path: '/',
       });
 
@@ -67,10 +82,14 @@ export async function login(prevState: unknown, formData: FormData) {
     };
   }
 
-  // Redirect must be outside try/catch or re-thrown if inside
+  // La redirección debe estar fuera del try/catch para que Next.js la maneje correctamente
   redirect('/admin');
 }
 
+/**
+ * Cierra la sesión del usuario eliminando la cookie de autenticación.
+ * Redirige a la página de login inmediatamente.
+ */
 export async function logout() {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);

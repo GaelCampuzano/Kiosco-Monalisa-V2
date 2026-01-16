@@ -15,7 +15,6 @@ export default function AdminDashboard() {
     stats,
     fetchTips,
     exportCSV,
-    dbAuthenticated,
     page,
     totalPages,
     setPage,
@@ -99,7 +98,6 @@ export default function AdminDashboard() {
               search={filters.search || ''}
               setSearch={setSearch}
               loading={loading}
-              dbAuthenticated={dbAuthenticated}
               page={page}
               totalPages={totalPages}
               onPageChange={setPage}

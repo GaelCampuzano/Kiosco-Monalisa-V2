@@ -1,6 +1,11 @@
-import mysql, { Pool } from 'mysql2/promise';
+import mysql from 'mysql2/promise';
 
-let pool: Pool;
+/**
+ * Variable global para mantener la conexión (pool) en memoria
+ * durante el ciclo de vida de la aplicación en desarrollo.
+ * Evita múltiples conexiones al recargar en HMR (Hot Module Replacement).
+ */
+let pool: mysql.Pool | null = null;
 
 // Configuración de la base de datos a partir de variables de entorno
 const dbConfig: mysql.PoolOptions = {

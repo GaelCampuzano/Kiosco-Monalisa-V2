@@ -2,7 +2,6 @@
 
 import { TipRecord } from '@/types';
 import { getDbPool } from '@/lib/db';
-// import { TIP_PERCENTAGES } from "@/lib/config";
 // [CORRECCIÓN CLAVE]: Importar TipRow para el tipado correcto de consultas SELECT
 import { TipRow } from '@/types/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
@@ -11,6 +10,15 @@ import { TipSchema } from '@/lib/schemas';
 
 /**
  * Guarda un registro de propina en la base de datos MySQL.
+ *
+ * @param data - Objeto con los datos de la propina (mesa, mesero, porcentaje y clave de idempotencia).
+ * @returns Un objeto indicando éxito o un mensaje de error si falla la validación o la inserción.
+ *
+ * FUNCIONALIDAD:
+ * 1. Valida los datos de entrada usando Zod (TipSchema).
+ * 2. Conecta a la base de datos.
+ * 3. Ejecuta una consulta INSERT protegida contra inyección SQL.
+ * 4. Maneja duplicados usando `idempotency_key` para evitar cobros dobles en red inestable.
  */
 export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'synced'>) {
   try {
@@ -56,7 +64,6 @@ export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'sy
 
     console.error('Error al guardar propina en MySQL:', error);
     // Devuelve un error para activar el modo offline/fallback en el cliente
-    // [DEBUG]: Devolvemos el mensaje real del error para depuración
     return {
       success: false,
       error: `Database save failed: ${(error as Error).message || String(error)}`,
@@ -81,7 +88,12 @@ export type PaginatedResponse = {
 
 /**
  * Obtiene registros de propinas con paginación y filtros.
- * PROTEGIDO: Solo accesible para administradores.
+ * PROTEGIDO: Solo accesible para administradores autenticados.
+ *
+ * @param page - Número de página actual (por defecto 1).
+ * @param limit - Cantidad de registros por página (por defecto 20).
+ * @param _filters - Filtros opcionales (fecha, búsqueda).
+ * @returns Objeto con los datos paginados y metadatos de paginación.
  */
 export async function getTips(
   page: number = 1,
@@ -90,22 +102,23 @@ export async function getTips(
   _filters?: TipsFilter
 ): Promise<PaginatedResponse> {
   try {
+    // Verificación de seguridad
     await requireAuth();
     const pool = await getDbPool();
     const offset = (page - 1) * limit;
 
-    // Construcción dinámica de filtros
+    // Construcción dinámica de filtros (WHERE clause)
     const whereClause = '1=1';
     const queryParams: (string | number | Date)[] = [];
 
-    // 1. Obtener total de registros para paginación
+    // 1. Obtener total de registros para calcular el número de páginas
     const countQuery = `SELECT COUNT(*) as total FROM tips WHERE ${whereClause}`;
     const [countRows] = await pool.query<RowDataPacket[]>(countQuery, queryParams);
     // [FIX]: Convertir BigInt a Number para evitar error de serialización en Server Actions
     const total = Number(countRows[0]?.total || 0);
     const pages = Math.ceil(total / limit);
 
-    // 2. Obtener datos paginados
+    // 2. Obtener los datos reales paginados
     const dataQuery = `
       SELECT id, tableNumber, waiterName, tipPercentage, createdAt 
       FROM tips 
@@ -114,11 +127,12 @@ export async function getTips(
       LIMIT ? OFFSET ?
     `;
 
-    // Añadir limit y offset al final de los params
+    // Añadir limit y offset al final de los parámetros de la consulta
     queryParams.push(limit, offset);
 
     const [rows] = await pool.query<TipRow[]>(dataQuery, queryParams);
 
+    // Mapeo de datos de la DB al formato de la aplicación
     const data = (rows as TipRow[]).map((tip) => ({
       id: tip.id?.toString() || '',
       tableNumber: tip.tableNumber.toString(),
@@ -136,8 +150,6 @@ export async function getTips(
     };
   } catch (error) {
     console.error('Error al cargar propinas paginadas:', error);
-    // [DEBUG]: Log error detail
-    if (error instanceof Error) console.error(error.stack);
     return { data: [], total: 0, pages: 0, currentPage: 1 };
   }
 }
@@ -149,7 +161,11 @@ export type TipsStats = {
 };
 
 /**
- * Calcula estadísticas agregadas basadas en los filtros actuales.
+ * Calcula estadísticas agregadas (KPIs) basadas en los filtros actuales.
+ * Utilizado para mostrar las tarjetas de resumen en el panel de administración.
+ *
+ * @param filters - Filtros a aplicar al cálculo (ej. rango de fechas).
+ * @returns Estadísticas clave: Total de propinas, Promedio de porcentaje y Mesero estrella.
  */
 export async function getTipsStats(filters?: TipsFilter): Promise<TipsStats> {
   const isAuth = await verifySession();
@@ -160,10 +176,10 @@ export async function getTipsStats(filters?: TipsFilter): Promise<TipsStats> {
   try {
     const pool = await getDbPool();
 
-    // Construcción dinámica de filtros usando el helper
+    // Construcción dinámica de filtros usando el helper privado
     const { whereClause, queryParams } = buildTipsQuery(filters);
 
-    // Calcular Promedio y Total
+    // Calcular Promedio y Total General
     const statsQuery = `
       SELECT 
         COUNT(*) as total, 
@@ -175,7 +191,7 @@ export async function getTipsStats(filters?: TipsFilter): Promise<TipsStats> {
     const total = Number(statsRows[0]?.total || 0);
     const avg = Number(statsRows[0]?.average || 0);
 
-    // Calcular Top Waiter (requiere subconsulta o group by separado)
+    // Calcular Mesero con más propinas (Top Waiter)
     const waiterQuery = `
       SELECT waiterName, COUNT(*) as count 
       FROM tips 
@@ -199,8 +215,11 @@ export async function getTipsStats(filters?: TipsFilter): Promise<TipsStats> {
 }
 
 /**
- * Obtiene TODAS las propinas que coinciden con los filtros para exportación.
- * Sin paginación (o con un límite muy alto de seguridad).
+ * Obtiene TODAS las propinas que coinciden con los filtros para generar un archivo CSV.
+ * A diferencia de `getTips`, esta función no pagina, pero tiene un límite de seguridad.
+ *
+ * @param filters - Filtros para seleccionar qué datos exportar.
+ * @returns Array de registros de propinas listos para exportar.
  */
 export async function exportTipsCSV(filters?: TipsFilter): Promise<TipRecord[]> {
   try {
@@ -214,7 +233,7 @@ export async function exportTipsCSV(filters?: TipsFilter): Promise<TipRecord[]> 
       WHERE ${whereClause}
       ORDER BY createdAt DESC
       LIMIT 10000 
-    `; // Límite de seguridad de 10k registros
+    `; // Límite de seguridad de 10k registros para proteger la memoria del servidor
 
     const [rows] = await pool.query<TipRow[]>(query, queryParams);
 
@@ -233,8 +252,8 @@ export async function exportTipsCSV(filters?: TipsFilter): Promise<TipRecord[]> 
 }
 
 /**
- * Helper privado para construir la cláusula WHERE y parámetros.
- * Evita duplicación de lógica de filtrado.
+ * Función auxiliar privada para construir la cláusula WHERE SQL y sus parámetros.
+ * Permite reutilizar la lógica de filtrado entre `getTips`, `getTipsStats` y `exportTipsCSV`.
  */
 function buildTipsQuery(filters?: TipsFilter) {
   let whereClause = '1=1';

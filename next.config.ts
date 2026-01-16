@@ -13,11 +13,10 @@ const withPWA = withPWAInit({
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  swcMinify: true,
   images: {
     qualities: [75, 100],
     // Permite imágenes sin optimización para evitar problemas en desarrollo y modo dispositivo
-    // unoptimized: true, // Optimización activada para producción
+
     remotePatterns: [],
   },
   // Silencia el error de conflicto entre PWA (Webpack) y Turbopack
@@ -25,12 +24,23 @@ const nextConfig = {
   // Permite acceso desde la red local
   experimental: {
     serverActions: {
-      allowedOrigins: ['192.168.9.195:3000', 'localhost:3000'],
+      allowedOrigins: [
+        'localhost:3000',
+        'localhost:3001',
+        ...(process.env.SERVER_IP ? [`${process.env.SERVER_IP}:3000`] : []),
+        '192.168.9.195:3000',
+        '192.168.9.195:3001',
+      ],
     },
   },
 };
 
 // @ts-expect-error - allowedDevOrigins might not be in the type definition yet for some versions
-nextConfig.allowedDevOrigins = ['localhost:3000', '192.168.9.195:3000'];
+nextConfig.allowedDevOrigins = [
+  'localhost:3000',
+  '192.168.9.195:3000',
+  'localhost:3001',
+  '192.168.9.195:3001',
+];
 
 export default withPWA(nextConfig);
