@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/app/components/ui/button';
 // import { Input } from "@/app/components/ui/input";
 import {
@@ -11,12 +11,7 @@ import {
   CardDescription,
 } from '@/app/components/ui/card';
 import { Plus, User, Search, Pencil, X, Check, RefreshCw } from 'lucide-react';
-import {
-  getAllWaiters,
-  createWaiter,
-  toggleWaiterStatus,
-  updateWaiterName,
-} from '@/app/actions/waiters';
+import { createWaiter, toggleWaiterStatus, updateWaiterName } from '@/app/actions/waiters';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TableSkeleton } from './TableSkeleton';
@@ -27,50 +22,30 @@ interface Waiter {
   active: boolean;
 }
 
-export function WaitersTable() {
-  const [waiters, setWaiters] = useState<Waiter[]>([]);
-  const [loading, setLoading] = useState(true);
+interface WaitersTableProps {
+  waiters: Waiter[];
+  loading: boolean;
+  onRefresh: () => void;
+  onUpdate: (waiters: Waiter[]) => void;
+}
+
+export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersTableProps) {
   const [newWaiterName, setNewWaiterName] = useState('');
   // const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
 
-  const loadWaiters = async () => {
-    setLoading(true);
-    try {
-      // Race between fetch and 10s timeout
-      const dataPromise = getAllWaiters();
-      const timeoutPromise = new Promise<Waiter[]>((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout')), 10000)
-      );
-
-      const data = await Promise.race([dataPromise, timeoutPromise]);
-      setWaiters(data);
-    } catch (error) {
-      console.error('Error loading waiters:', error);
-      toast.error('Error al cargar meseros (Tiempo de espera agotado)');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadWaiters();
-  }, []);
-
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWaiterName.trim()) return;
 
-    // Assuming there was an `isCreating` state before, we'll remove it as per the new snippet.
-    // If the user wants to keep it, they should specify. For now, following the snippet.
     try {
       const result = await createWaiter(newWaiterName);
       if (result.success && result.waiter) {
         toast.success('Mesero agregado correctamente');
         setNewWaiterName('');
-        loadWaiters(); // Recargar lista
+        onRefresh(); // Recargar lista centralizada
       } else {
         toast.error(result.error || 'Error al crear');
       }
@@ -81,13 +56,16 @@ export function WaitersTable() {
 
   const handleToggle = async (id: number, currentStatus: boolean) => {
     try {
-      // Optimistic update
-      setWaiters((prev) => prev.map((w) => (w.id === id ? { ...w, active: !currentStatus } : w)));
+      // Optimistic update locally
+      const updatedWaiters = waiters.map((w) =>
+        w.id === id ? { ...w, active: !currentStatus } : w
+      );
+      onUpdate(updatedWaiters);
 
       const result = await toggleWaiterStatus(id, currentStatus);
       if (!result.success) {
         // Revert if failed
-        setWaiters((prev) => prev.map((w) => (w.id === id ? { ...w, active: currentStatus } : w)));
+        onUpdate(waiters);
         toast.error(result.error);
       } else {
         toast.success(`Estado actualizado`);
@@ -113,7 +91,11 @@ export function WaitersTable() {
     try {
       const res = await updateWaiterName(editingId, editName);
       if (res.success) {
-        setWaiters(waiters.map((w) => (w.id === editingId ? { ...w, name: editName } : w)));
+        // Update both local view and parent state via onUpdate if needed,
+        // but since we are editing parent's list:
+        const updated = waiters.map((w) => (w.id === editingId ? { ...w, name: editName } : w));
+        onUpdate(updated);
+
         setEditingId(null);
         setEditName('');
         toast.success('Nombre actualizado');
@@ -141,7 +123,7 @@ export function WaitersTable() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={loadWaiters}
+          onClick={() => onRefresh()}
           className="text-monalisa-gold hover:text-white"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />

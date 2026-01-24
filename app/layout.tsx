@@ -1,19 +1,12 @@
-import type { Metadata, Viewport } from 'next'; //
-import { Playfair_Display, Lato } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
+import localFont from 'next/font/local';
 import './globals.css';
 import { Toaster } from 'sonner';
 import ServiceWorkerRegistration from './components/ServiceWorkerRegistration';
 
-const playfair = Playfair_Display({
-  variable: '--font-playfair',
-  subsets: ['latin'],
-  display: 'swap',
-});
-
-const lato = Lato({
-  variable: '--font-lato',
-  weight: ['300', '400', '700'],
-  subsets: ['latin'],
+const googleSans = localFont({
+  src: '../fonts/GoogleSansFlex-VariableFont_GRAD,ROND,opsz,slnt,wdth,wght.ttf',
+  variable: '--font-google-sans',
   display: 'swap',
 });
 
@@ -56,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${playfair.variable} ${lato.variable}`} suppressHydrationWarning>
+    <html lang="es" className={googleSans.variable} suppressHydrationWarning>
       <body className="antialiased bg-[#162B46] text-[#B2B2B2]">
         <ServiceWorkerRegistration />
         <Toaster position="top-center" richColors theme="dark" />

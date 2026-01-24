@@ -1,3 +1,4 @@
+'use client';
 import { useEffect } from 'react';
 import { Calendar, TrendingUp, Users } from 'lucide-react';
 import { motion, useSpring, useTransform } from 'framer-motion';

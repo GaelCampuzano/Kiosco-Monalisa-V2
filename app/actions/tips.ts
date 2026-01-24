@@ -97,7 +97,7 @@ export type PaginatedResponse = {
  */
 export async function getTips(
   page: number = 1,
-  limit: number = 20,
+  limit: number = 10,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _filters?: TipsFilter
 ): Promise<PaginatedResponse> {

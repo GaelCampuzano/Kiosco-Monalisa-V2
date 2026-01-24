@@ -3,11 +3,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Search, User } from 'lucide-react'; // Removed Plus
-import { getActiveWaiters, Waiter } from '@/app/actions/waiters'; // Removed createWaiter
+import { Waiter } from '@/app/actions/waiters'; // Removed createWaiter
 
 interface WaiterAutocompleteProps {
   value: string;
   onChange: (value: string) => void;
+  waiters: Waiter[];
+  isLoading?: boolean;
   onValidityChange?: (isValid: boolean) => void;
   placeholder?: string;
   className?: string;
@@ -16,29 +18,18 @@ interface WaiterAutocompleteProps {
 export function WaiterAutocomplete({
   value,
   onChange,
+  waiters,
+  isLoading = false,
   onValidityChange,
   placeholder,
 }: WaiterAutocompleteProps) {
   const [query, setQuery] = useState(value);
-  const [waiters, setWaiters] = useState<Waiter[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Cargar meseros al montar
-  useEffect(() => {
-    let mounted = true;
-    getActiveWaiters().then((data) => {
-      if (mounted) {
-        setWaiters(data);
-        setIsLoading(false);
-      }
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  // Ya no cargamos meseros internamente, los recibimos de useKioskData
+  // vía props desde page.tsx para asegurar soporte offline.
 
   // Actualizar query si el valor externo cambia
   useEffect(() => {

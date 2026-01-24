@@ -25,6 +25,7 @@ export const translations = {
     disclaimer:
       'La propina es voluntaria y una muestra de agradecimiento al personal, no es obligatoria.',
     disclaimerTitle: 'Aviso Importante',
+    back: 'Volver',
   },
   en: {
     waiterTitle: 'Table Setup',
@@ -49,6 +50,7 @@ export const translations = {
     confirm: 'Confirm',
     disclaimer: 'Tips are voluntary and a sign of appreciation for the staff, not mandatory.',
     disclaimerTitle: 'Important Notice',
+    back: 'Back',
   },
 } as const;
 

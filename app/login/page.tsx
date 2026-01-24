@@ -7,6 +7,7 @@ import { login } from '@/app/actions/auth';
 import { ArrowLeft, Lock, User, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Background } from '@/app/components/Background';
 
 const initialState = {
   error: '',
@@ -58,9 +59,8 @@ export default function LoginPage() {
   }, [isOffline]);
 
   return (
-    <div className="min-h-screen bg-monalisa-navy flex items-center justify-center p-4 sm:p-6 relative overflow-hidden selection:bg-monalisa-gold selection:text-monalisa-navy">
-      {/* Fondo decorativo sutil */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#1f3a5e] via-monalisa-navy to-[#0a1525] -z-10" />
+    <div className="h-screen h-[100dvh] bg-monalisa-navy flex items-center justify-center p-4 sm:p-6 relative overflow-hidden selection:bg-monalisa-gold selection:text-monalisa-navy">
+      <Background />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -79,7 +79,7 @@ export default function LoginPage() {
 
         {/* Tarjeta de Login */}
         <motion.div
-          className="bg-monalisa-navy/50 backdrop-blur-xl border border-monalisa-gold/20 p-6 sm:p-8 md:p-12 rounded-sm shadow-2xl relative overflow-hidden"
+          className="glass-card p-6 sm:p-8 md:p-12 rounded-2xl shadow-2xl relative overflow-hidden"
           initial={{ scale: 0.95 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.1, duration: 0.5 }}
@@ -151,7 +151,7 @@ export default function LoginPage() {
                   name="user"
                   type="text"
                   required
-                  className="w-full bg-[#0f1e33] border border-monalisa-gold/10 rounded-sm py-3 pl-12 pr-4 text-white focus:border-monalisa-gold outline-none transition-all placeholder:text-monalisa-silver/10 font-serif"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-monalisa-gold outline-none transition-all placeholder:text-monalisa-silver/10 font-serif"
                   placeholder="admin"
                 />
               </div>
@@ -173,7 +173,7 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   required
-                  className="w-full bg-[#0f1e33] border border-monalisa-gold/10 rounded-sm py-3 pl-12 pr-4 text-white focus:border-monalisa-gold outline-none transition-all placeholder:text-monalisa-silver/10 font-serif"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-monalisa-gold outline-none transition-all placeholder:text-monalisa-silver/10 font-serif"
                   placeholder="••••••••"
                 />
               </div>
@@ -199,7 +199,7 @@ export default function LoginPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="w-full bg-monalisa-bronze hover:bg-monalisa-gold hover:text-monalisa-navy text-white font-bold py-4 rounded-sm uppercase tracking-[0.2em] text-xs transition-colors duration-300 shadow-[0_0_15px_rgba(147,119,55,0.2)] hover:shadow-[0_0_25px_rgba(223,200,148,0.4)] disabled:opacity-50 disabled:cursor-not-allowed mt-4 flex items-center justify-center"
+              className="w-full bg-monalisa-bronze hover:bg-monalisa-gold hover:text-monalisa-navy text-white font-bold py-4 rounded-xl uppercase tracking-[0.2em] text-xs transition-colors duration-300 shadow-[0_0_15px_rgba(147,119,55,0.2)] hover:shadow-[0_0_25px_rgba(223,200,148,0.4)] disabled:opacity-50 disabled:cursor-not-allowed mt-4 flex items-center justify-center"
             >
               {isPending ? (
                 <>

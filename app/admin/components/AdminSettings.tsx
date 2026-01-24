@@ -1,29 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getTipPercentages, updateTipPercentages } from '@/app/actions/settings';
+import { useState } from 'react';
+import { updateTipPercentages } from '@/app/actions/settings';
 import { toast } from 'sonner';
 import { Save, Loader2 } from 'lucide-react';
 
-export function AdminSettings() {
-  // Estado para los 3 porcentajes
-  const [percentages, setPercentages] = useState<number[]>([0, 0, 0]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+interface AdminSettingsProps {
+  percentages: number[];
+  loading: boolean;
+  onRefresh: () => void;
+  onUpdate: (percentages: number[]) => void;
+}
 
-  useEffect(() => {
-    getTipPercentages()
-      .then((data) => {
-        setPercentages(data);
-      })
-      .catch((err) => {
-        console.error('Error loading settings:', err);
-        toast.error('Error al cargar configuración');
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+export function AdminSettings({ percentages, loading, onRefresh, onUpdate }: AdminSettingsProps) {
+  const [saving, setSaving] = useState(false);
 
   const handleChange = (index: number, value: string) => {
     const val = parseInt(value);
@@ -31,7 +21,7 @@ export function AdminSettings() {
 
     const newPct = [...percentages];
     newPct[index] = val;
-    setPercentages(newPct);
+    onUpdate(newPct);
   };
 
   const handleSave = async () => {
@@ -46,6 +36,7 @@ export function AdminSettings() {
       const res = await updateTipPercentages(percentages);
       if (res.success) {
         toast.success('Configuración guardada correctamente');
+        onRefresh(); // Refrescar para asegurar sincronía
       } else {
         toast.error(res.error || 'Error al guardar');
       }

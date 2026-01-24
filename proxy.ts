@@ -16,7 +16,7 @@ const COOKIE_NAME = 'monalisa_admin_session';
  * 2. Verifica la existencia y valor de la cookie de sesión.
  * 3. Si no es válida, redirige al usuario a /login.
  */
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   // Obtenemos la cookie de sesión
   const authCookie = req.cookies.get(COOKIE_NAME);
 

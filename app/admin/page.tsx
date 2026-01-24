@@ -7,6 +7,7 @@ import { AdminStats } from '@/app/admin/components/AdminStats';
 import { TipsTable } from '@/app/admin/components/TipsTable';
 import { WaitersTable } from '@/app/admin/components/WaitersTable';
 import { AdminSettings } from '@/app/admin/components/AdminSettings';
+import { AIAnalyst } from '@/app/admin/components/AIAnalyst';
 
 export default function AdminDashboard() {
   const {
@@ -21,39 +22,41 @@ export default function AdminDashboard() {
     setDateRange,
     filters,
     setSearch,
+    // Nuevos
+    waiters,
+    setWaiters,
+    loadingWaiters,
+    fetchWaiters,
+    percentages,
+    setPercentages,
+    loadingSettings,
+    fetchSettings,
   } = useAdminData();
 
-  const [activeTab, setActiveTab] = useState<'tips' | 'waiters' | 'settings'>('tips');
-
-  // No necesitamos estado local de search si usamos el del hook,
-  // pero para evitar re-renders excesivos al escribir, podríamos debcear.
-  // Por simplicidad en versión 1, usamos el del hook directo o mantenemos local solo visual.
-  // Vamos a usar el del hook para consistencia inmediata con "Enter" o search simple.
+  const [activeTab, setActiveTab] = useState<'tips' | 'waiters' | 'settings' | 'ia'>('tips');
 
   useEffect(() => {
-    // Persistir tab en URL o estado simple si se desea, por ahora local
-  }, []);
+    if (activeTab === 'waiters') {
+      fetchWaiters();
+    } else if (activeTab === 'settings') {
+      fetchSettings();
+    }
+  }, [activeTab, fetchWaiters, fetchSettings]);
 
   const handleExport = () => {
-    // Exportar lo que hay en 'tips' (que ya es la página actual filtrada)
-    // IDEALMENTE: exportCSV debería recibir filtros y bajar TODO del servidor, no solo la página actual.
-    // El hook useAdminData ya maneja esto internamente usando los filtros actuales.
     exportCSV();
   };
 
   return (
-    <div className="min-h-screen bg-monalisa-navy text-monalisa-silver p-4 sm:p-6 md:p-10 font-sans selection:bg-monalisa-gold selection:text-monalisa-navy">
-      {/* Fondo decorativo sutil */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_var(--tw-gradient-stops))] from-[#1f3a5e] via-monalisa-navy to-[#0a1525] -z-10 pointer-events-none" />
-
+    <div className="min-h-full text-monalisa-silver p-4 sm:p-6 md:p-10 font-sans selection:bg-monalisa-gold selection:text-monalisa-navy">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Navegación de Pestañas */}
-        <div className="flex space-x-1 border-b border-monalisa-gold/20 pb-1">
+        <div className="flex space-x-2 bg-white/5 p-1 rounded-xl backdrop-blur-md border border-white/10 w-fit">
           <button
             onClick={() => setActiveTab('tips')}
-            className={`px-6 py-2 text-sm font-medium transition-all rounded-t-sm relative ${
+            className={`px-6 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-lg relative ${
               activeTab === 'tips'
-                ? 'text-monalisa-gold after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-[2px] after:bg-monalisa-gold'
+                ? 'bg-monalisa-gold text-monalisa-navy shadow-lg shadow-monalisa-gold/20'
                 : 'text-monalisa-silver/50 hover:text-monalisa-silver hover:bg-white/5'
             }`}
           >
@@ -61,9 +64,9 @@ export default function AdminDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('waiters')}
-            className={`px-6 py-2 text-sm font-medium transition-all rounded-t-sm relative ${
+            className={`px-6 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-lg relative ${
               activeTab === 'waiters'
-                ? 'text-monalisa-gold after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-[2px] after:bg-monalisa-gold'
+                ? 'bg-monalisa-gold text-monalisa-navy shadow-lg shadow-monalisa-gold/20'
                 : 'text-monalisa-silver/50 hover:text-monalisa-silver hover:bg-white/5'
             }`}
           >
@@ -71,13 +74,23 @@ export default function AdminDashboard() {
           </button>
           <button
             onClick={() => setActiveTab('settings')}
-            className={`px-6 py-2 text-sm font-medium transition-all rounded-t-sm relative ${
+            className={`px-6 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-lg relative ${
               activeTab === 'settings'
-                ? 'text-monalisa-gold after:absolute after:bottom-[-5px] after:left-0 after:w-full after:h-[2px] after:bg-monalisa-gold'
+                ? 'bg-monalisa-gold text-monalisa-navy shadow-lg shadow-monalisa-gold/20'
                 : 'text-monalisa-silver/50 hover:text-monalisa-silver hover:bg-white/5'
             }`}
           >
             Configuración
+          </button>
+          <button
+            onClick={() => setActiveTab('ia')}
+            className={`px-6 py-2 text-xs font-bold uppercase tracking-widest transition-all rounded-lg relative ${
+              activeTab === 'ia'
+                ? 'bg-monalisa-gold text-monalisa-navy shadow-lg shadow-monalisa-gold/20'
+                : 'text-monalisa-silver/50 hover:text-monalisa-silver hover:bg-white/5'
+            }`}
+          >
+            IA Analista
           </button>
         </div>
 
@@ -105,11 +118,25 @@ export default function AdminDashboard() {
           </div>
         ) : activeTab === 'waiters' ? (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <WaitersTable />
+            <WaitersTable
+              waiters={waiters}
+              loading={loadingWaiters}
+              onRefresh={() => fetchWaiters(true)}
+              onUpdate={setWaiters}
+            />
+          </div>
+        ) : activeTab === 'settings' ? (
+          <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <AdminSettings
+              percentages={percentages}
+              loading={loadingSettings}
+              onRefresh={() => fetchSettings(true)}
+              onUpdate={setPercentages}
+            />
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-            <AdminSettings />
+            <AIAnalyst />
           </div>
         )}
       </div>

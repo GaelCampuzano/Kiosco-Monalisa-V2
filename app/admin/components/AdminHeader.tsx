@@ -1,4 +1,5 @@
-import { LogOut, RefreshCw, Download } from 'lucide-react';
+'use client';
+import { RefreshCw, Download, LogOut } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
 
 interface AdminHeaderProps {

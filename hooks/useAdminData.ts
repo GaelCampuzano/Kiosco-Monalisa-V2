@@ -1,13 +1,15 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { TipRecord } from '@/types';
 import { getTips, getTipsStats, exportTipsCSV, TipsFilter } from '@/app/actions/tips';
+import { getAllWaiters, Waiter } from '@/app/actions/waiters';
+import { getTipPercentages } from '@/app/actions/settings';
 
 /**
  * Hook personalizado para gestionar la lógica de datos del Panel de Administración.
  * Centraliza el estado, la carga de datos y las operaciones de exportación.
  *
- * @returns Objeto con estados (tips, loading, stats) y funciones (fetchTips, exportCSV, setter de filtros).
+ * @returns Objeto con estados y funciones para el Panel Admin.
  */
 export function useAdminData() {
   const [tips, setTips] = useState<TipRecord[]>([]);
@@ -16,7 +18,17 @@ export function useAdminData() {
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState<TipsFilter>({});
 
-  // Simple debounce utility (inside hook or imported)
+  // Estados adicionales para centralización
+  const [waiters, setWaiters] = useState<Waiter[]>([]);
+  const [percentages, setPercentages] = useState<number[]>([0, 0, 0]);
+  const [loadingWaiters, setLoadingWaiters] = useState(false);
+  const [loadingSettings, setLoadingSettings] = useState(false);
+
+  // Controladores de carga única (caché)
+  const hasLoadedWaiters = useRef(false);
+  const hasLoadedSettings = useRef(false);
+
+  // Simple debounce utility
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
     let timeout: NodeJS.Timeout;
@@ -35,7 +47,6 @@ export function useAdminData() {
 
   /**
    * Carga los datos de propinas y estadísticas actuales desde el servidor.
-   * Se ejecuta automáticamente cuando cambian la página o los filtros.
    */
   const fetchTips = useCallback(async () => {
     setLoading(true);
@@ -43,7 +54,7 @@ export function useAdminData() {
       let dataRes, statsRes;
 
       try {
-        dataRes = await getTips(page, 20, filters);
+        dataRes = await getTips(page, 10, filters);
       } catch (err) {
         console.error('Error fetching tips:', err);
         dataRes = { data: [], total: 0, pages: 0, currentPage: 1 };
@@ -66,13 +77,54 @@ export function useAdminData() {
     }
   }, [page, filters]);
 
+  /**
+   * Carga la lista de meseros. Solo ejecuta la petición si no se han cargado antes
+   * o si se fuerza el refresco.
+   */
+  const fetchWaiters = useCallback(
+    async (force = false) => {
+      if (hasLoadedWaiters.current && !force && waiters.length > 0) return;
+
+      setLoadingWaiters(true);
+      try {
+        const data = await getAllWaiters();
+        setWaiters(data);
+        hasLoadedWaiters.current = true;
+      } catch (error) {
+        console.error('Error loading waiters:', error);
+        toast.error('Error al cargar meseros');
+      } finally {
+        setLoadingWaiters(false);
+      }
+    },
+    [waiters.length]
+  );
+
+  /**
+   * Carga la configuración de porcentajes.
+   */
+  const fetchSettings = useCallback(async (force = false) => {
+    if (hasLoadedSettings.current && !force) return;
+
+    setLoadingSettings(true);
+    try {
+      const data = await getTipPercentages();
+      setPercentages(data);
+      hasLoadedSettings.current = true;
+    } catch (error) {
+      console.error('Error loading settings:', error);
+      toast.error('Error al cargar configuración');
+    } finally {
+      setLoadingSettings(false);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTips();
   }, [fetchTips]);
 
   /**
    * Actualiza el rango de fechas para el filtrado.
-   * Reinicia la paginación a la página 1.
    */
   const setDateRange = (start?: Date, end?: Date) => {
     setFilters((prev) => ({
@@ -80,10 +132,9 @@ export function useAdminData() {
       startDate: start?.toISOString(),
       endDate: end?.toISOString(),
     }));
-    setPage(1); // Reset a primera página al filtrar
+    setPage(1);
   };
 
-  // Debounce implementation for search
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const debouncedSetSearch = useCallback(
     debounce((term: string) => {
@@ -98,8 +149,7 @@ export function useAdminData() {
   };
 
   /**
-   * Exporta los datos filtrados a un archivo CSV.
-   * Maneja la descarga en el navegador del usuario.
+   * Exporta los datos a CSV.
    */
   const exportCSV = async () => {
     try {
@@ -108,11 +158,10 @@ export function useAdminData() {
 
       if (allTips.length === 0) {
         toast.dismiss();
-        toast.info('No hay datos para exportar con los filtros actuales');
+        toast.info('No hay datos para exportar');
         return;
       }
 
-      // Crear encabezados CSV
       const headers = ['Fecha', 'Mesa', 'Mesero', 'Propina (%)'];
       const rows = allTips.map((tip) => [
         new Date(tip.createdAt).toLocaleString(),
@@ -121,28 +170,25 @@ export function useAdminData() {
         tip.tipPercentage.toString(),
       ]);
 
-      // Combinar encabezados y filas
       const csvContent = [
         headers.join(','),
         ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
       ].join('\n');
 
-      // Crear blob y descargar
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
       link.setAttribute(
         'download',
-        `propinas-monalisa-FULL-${new Date().toISOString().split('T')[0]}.csv`
+        `reporte-propinas-${new Date().toISOString().split('T')[0]}.csv`
       );
-      link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
       toast.dismiss();
-      toast.success('Reporte descargado correctamente');
+      toast.success('Reporte descargado');
     } catch (error) {
       console.error('Error exporting CSV:', error);
       toast.dismiss();
@@ -162,5 +208,14 @@ export function useAdminData() {
     setDateRange,
     setSearch: handleSearchChange,
     filters,
+    // Nuevos estados y funciones
+    waiters,
+    setWaiters,
+    loadingWaiters,
+    fetchWaiters,
+    percentages,
+    setPercentages,
+    loadingSettings,
+    fetchSettings,
   };
 }

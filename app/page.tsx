@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { AnimatePresence } from 'framer-motion';
 import { Shield } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Shield } from 'lucide-react';
 import { useTips } from '@/hooks/useTips';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useImageCache } from '@/hooks/useImageCache';
+import { useKioskData } from '@/hooks/useKioskData';
 import { useTranslations, Language } from '@/lib/translations';
 
 import { TipPercentage, KioskStep } from '@/types';
@@ -20,17 +21,11 @@ import { ThankYouScreen } from '@/app/components/ThankYouScreen';
 import { Background } from '@/app/components/Background';
 import { SuccessAnimation } from '@/app/components/SuccessAnimation';
 
-import { getTipPercentages } from '@/app/actions/settings';
-
 export default function Kiosk() {
-  // Estado para porcentajes (inicialmente vacío o defaults, se cargará)
-  const [tipPercentages, setTipPercentages] = useState<number[]>([20, 23, 25]);
-
-  useEffect(() => {
-    getTipPercentages().then(setTipPercentages);
-  }, []);
-  // Hooks personalizados y estado para la gestión del kiosco
+  // Hooks de datos y sincronización
   const { saveTip, isOffline, isSyncing, pendingCount } = useTips();
+  const { waiters, percentages: tipPercentages, isLoading: isDataLoading } = useKioskData();
+
   const [lang, setLang] = useState<Language>('es');
   const [step, setStep] = useState<KioskStep>('WAITER_INPUT');
   const [waiterName, setWaiterName] = useState('');
@@ -62,7 +57,7 @@ export default function Kiosk() {
   };
 
   return (
-    <main className="min-h-screen text-monalisa-silver flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
+    <main className="h-screen h-[100dvh] text-monalisa-silver flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden font-sans">
       <Background />
 
       <LanguageToggle lang={lang} setLang={setLang} />
@@ -83,7 +78,7 @@ export default function Kiosk() {
       <AnimatePresence>{showSuccessAnimation && <SuccessAnimation />}</AnimatePresence>
 
       <div className="relative z-10 w-full max-w-5xl flex flex-col items-center justify-center min-h-[60vh] px-2 sm:px-4">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="wait" initial={false}>
           {step === 'WAITER_INPUT' && (
             <WaiterForm
               key="waiter-form"
@@ -93,6 +88,8 @@ export default function Kiosk() {
               setWaiterName={setWaiterName}
               onSubmit={handleWaiterSubmit}
               text={text}
+              waiters={waiters}
+              isDataLoading={isDataLoading}
             />
           )}
 

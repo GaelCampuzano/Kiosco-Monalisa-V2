@@ -5,6 +5,11 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  /* Densidad de Pixeles y Color Rendering */
+  color-scheme: dark;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
   /* Monalisa Original Palette */
   --navy: #162b46;
   --gold-light: #dfc894;
@@ -12,19 +17,25 @@
   --silver: #b2b2b2;
 
   /* Shadcn Semantic Mapping */
-  --background: 214 52% 18%; /* Navy */
-  --foreground: 0 0% 70%; /* Silver */
+  --background: 214 52% 18%;
+  /* Navy */
+  --foreground: 0 0% 70%;
+  /* Silver */
 
-  --card: 215 50% 12%; /* Darker Navy */
+  --card: 215 50% 12%;
+  /* Darker Navy */
   --card-foreground: 0 0% 70%;
 
   --popover: 214 52% 18%;
   --popover-foreground: 0 0% 70%;
 
-  --primary: 46 65% 52%; /* Gold */
-  --primary-foreground: 214 52% 18%; /* Navy */
+  --primary: 46 65% 52%;
+  /* Gold */
+  --primary-foreground: 214 52% 18%;
+  /* Navy */
 
-  --secondary: 42 45% 40%; /* Bronze */
+  --secondary: 42 45% 40%;
+  /* Bronze */
   --secondary-foreground: 0 0% 98%;
 
   --muted: 215 50% 30%;
@@ -36,7 +47,8 @@
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 46 65% 52%; /* Gold */
+  --border: 46 65% 52%;
+  /* Gold */
   --input: 215 50% 30%;
   --ring: 46 65% 52%;
 
@@ -49,8 +61,8 @@
   --color-monalisa-bronze: var(--gold-dark);
   --color-monalisa-silver: var(--silver);
 
-  --font-serif: var(--font-playfair);
-  --font-sans: var(--font-lato);
+  --font-serif: var(--font-google-sans);
+  --font-sans: var(--font-google-sans);
 
   /* Shadcn Colors */
   --color-background: hsl(var(--background));
@@ -89,6 +101,14 @@
 body {
   @apply bg-background text-foreground;
   font-family: var(--font-sans);
+  min-height: 100vh;
+  min-height: 100dvh;
+  /* Soporte para Safe Areas (Notches) */
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left: env(safe-area-inset-left, 0);
+  padding-right: env(safe-area-inset-right, 0);
+  overflow-x: hidden;
 }
 
 * {
@@ -108,7 +128,8 @@ body {
 ::-webkit-scrollbar-thumb {
   background: var(--gold-dark);
   border-radius: 5px;
-  border: 2px solid var(--navy); /* Creates padding effect */
+  border: 2px solid var(--navy);
+  /* Creates padding effect */
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -117,4 +138,58 @@ body {
 
 ::-webkit-scrollbar-corner {
   background: var(--navy);
+}
+
+/* Glassmorphism Premium */
+.glass-container {
+  @apply bg-[#162B46]/40 backdrop-blur-md border border-white/10 shadow-2xl;
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+}
+
+.glass-card {
+  @apply bg-[#162B46]/60 backdrop-blur-xl border border-white/20 shadow-2xl;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(223, 200, 148, 0.1) 0%,
+    transparent 50%,
+    rgba(223, 200, 148, 0.05) 100%
+  );
+  pointer-events: none;
+}
+
+/* Animaciones Personalizadas */
+@keyframes float-particle {
+  0% {
+    transform: translateY(0) translateX(0);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 0.5;
+  }
+
+  80% {
+    opacity: 0.5;
+  }
+
+  100% {
+    transform: translateY(-100vh) translateX(20px);
+    opacity: 0;
+  }
+}
+
+.animate-float-particle {
+  animation: float-particle var(--duration, 15s) linear infinite;
+  animation-delay: var(--delay, 0s);
 }
