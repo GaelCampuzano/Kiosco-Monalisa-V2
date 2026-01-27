@@ -28,7 +28,10 @@ export function useAdminData() {
   const hasLoadedWaiters = useRef(false);
   const hasLoadedSettings = useRef(false);
 
-  // Simple debounce utility
+  /**
+   * Utilidad simple de debounce para limitar la frecuencia de ejecución de funciones.
+   * Útil para evitar peticiones excesivas durante la escritura en campos de búsqueda.
+   */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
     let timeout: NodeJS.Timeout;
@@ -162,12 +165,14 @@ export function useAdminData() {
         return;
       }
 
-      const headers = ['Fecha', 'Mesa', 'Mesero', 'Propina (%)'];
+      const headers = ['Fecha', 'Mesa', 'Mesero', 'Propina (%)', 'IP Origen', 'Dispositivo'];
       const rows = allTips.map((tip) => [
         new Date(tip.createdAt).toLocaleString(),
         tip.tableNumber,
         tip.waiterName,
         tip.tipPercentage.toString(),
+        tip.ipAddress || '-',
+        tip.userAgent || '-',
       ]);
 
       const csvContent = [

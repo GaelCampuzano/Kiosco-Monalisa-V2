@@ -30,7 +30,7 @@ async function setupDatabase() {
 
     console.log('🛠️  Verifying/Creating tables...');
 
-    // 1. Create 'tips' table
+    // 1. Create 'tips' table (Updated with audit columns)
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS tips (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -39,13 +39,26 @@ async function setupDatabase() {
         tipPercentage INT NOT NULL,
         amount DECIMAL(10, 2),
         idempotency_key VARCHAR(36) UNIQUE,
+        ip_address VARCHAR(45),
+        user_agent TEXT,
         createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         INDEX idx_created_at (createdAt),
         INDEX idx_waiter_name (waiterName),
-        INDEX idx_table_number (tableNumber)
+        INDEX idx_table_number (tableNumber),
+        INDEX idx_ip (ip_address)
       );
     `);
-    console.log('   - Table "tips" is ready.');
+
+    // Migración manual: Añadir columnas si ya existe la tabla (para no perder datos)
+    try {
+      await connection.execute('ALTER TABLE tips ADD COLUMN ip_address VARCHAR(45)');
+      await connection.execute('ALTER TABLE tips ADD COLUMN user_agent TEXT');
+      await connection.execute('CREATE INDEX idx_ip ON tips(ip_address)');
+    } catch {
+      /* Columnas ya existen */
+    }
+
+    console.log('   - Table "tips" is ready with audit columns.');
 
     // 2. Create 'waiters' table
     await connection.execute(`
@@ -80,6 +93,8 @@ async function setupDatabase() {
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
+    console.log('   - Table "users" is ready.');
+
     console.log('   - Table "users" is ready.');
 
     // Seed default tips if not exists

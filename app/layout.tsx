@@ -16,6 +16,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false, // Evita zoom accidental en dispositivos táctiles como iPad
   themeColor: '#162B46',
+  viewportFit: 'cover',
 };
 
 export const metadata: Metadata = {

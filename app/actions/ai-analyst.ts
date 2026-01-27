@@ -3,12 +3,64 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getTipsStats, exportTipsCSV } from './tips';
 import { verifySession } from '@/lib/auth-check';
-import { getAllWaiters } from './waiters';
+import { getDbPool } from '@/lib/db';
 
 // Inicializar la IA fuera de la función pero dentro del módulo de servidor
 const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+// [FIX]: Usar alias genérico para evitar errores 404 en ruteo de versiones
+const aiModel = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+
+import { RowDataPacket } from 'mysql2/promise';
+
+interface AppSettingRow extends RowDataPacket {
+  setting_value: string;
+  updatedAt: string;
+}
+
+/**
+ * Helper para obtener datos cacheados de la DB para evitar saturar la API (Error 429)
+ */
+async function getCachedAI(key: string, maxAgeHours: number = 6) {
+  try {
+    const pool = await getDbPool();
+    const [rows] = await pool.query<AppSettingRow[]>(
+      'SELECT setting_value, updatedAt FROM app_settings WHERE setting_key = ?',
+      [key]
+    );
+
+    if (rows && rows.length > 0) {
+      const lastUpdate = new Date(rows[0].updatedAt).getTime();
+      const now = Date.now();
+      const ageHours = (now - lastUpdate) / (1000 * 60 * 60);
+
+      // Si la caché tiene menos de X horas, la usamos
+      if (ageHours < maxAgeHours) {
+        const val = rows[0].setting_value;
+        return typeof val === 'string' ? JSON.parse(val) : val;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error(`[Error Lectura Caché IA] ${key}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Helper para guardar resultados de IA en la DB
+ */
+async function saveCachedAI(key: string, value: unknown) {
+  try {
+    const pool = await getDbPool();
+    await pool.query(
+      'INSERT INTO app_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updatedAt = CURRENT_TIMESTAMP',
+      [key, JSON.stringify(value)]
+    );
+  } catch (error) {
+    console.error(`[Error Escritura Caché IA] ${key}:`, error);
+  }
+}
 
 /**
  * Acción de servidor que genera un análisis de datos usando Google Gemini.
@@ -25,14 +77,18 @@ export async function generateAIAnalysis() {
   }
 
   try {
-    // 1. Obtener estadísticas generales
+    // 1. Intentar obtener de la caché primero (6 horas)
+    const cached = await getCachedAI('last_ai_analysis');
+    if (cached) return cached;
+
+    // 2. Obtener estadísticas generales
     const stats = await getTipsStats();
 
-    // 2. Obtener una muestra de los datos recientes (últimos 50) para contexto
+    // 3. Obtener una muestra de los datos recientes (últimos 100) para contexto
     const allTips = await exportTipsCSV();
-    const recentTipsSample = allTips.slice(0, 50);
+    const recentTipsSample = allTips.slice(0, 100);
 
-    // 3. Crear el prompt enriquecido con datos reales
+    // 4. Crear el prompt enriquecido con datos reales
     const prompt = `
       Eres un consultor experto en gestión de restaurantes y análisis de datos. 
       Analiza los siguientes datos de propinas del restaurante "Monalisa" y genera un reporte conciso y accionable en español.
@@ -56,100 +112,16 @@ export async function generateAIAnalysis() {
       - Si hay pocos datos, menciona que el análisis es preliminar.
     `;
 
-    const result = await model.generateContent(prompt);
+    const result = await aiModel.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
+    // Guardar en caché
+    await saveCachedAI('last_ai_analysis', text);
+
     return text;
   } catch (error) {
-    console.error('AI Analysis Error:', error);
+    console.error('Error en Análisis de IA:', error);
     return 'Hubo un error al conectar con el analista de IA. Por favor, inténtalo de nuevo más tarde.';
-  }
-}
-
-/**
- * Genera mensajes motivacionales personalizados para cada mesero.
- */
-export async function getWaiterMotivations() {
-  const isAuth = await verifySession();
-  if (!isAuth) throw new Error('No autorizado');
-
-  try {
-    const waiters = await getAllWaiters();
-    const activeWaiters = waiters.filter((w) => w.active);
-
-    // Obtener datos de los últimos 7 días para tendencia
-    const stats = await exportTipsCSV({
-      startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-    });
-
-    const prompt = `
-            Eres un coach motivacional para el staff del restaurante "Monalisa".
-            Basado en estos datos de propinas de los últimos 7 días:
-            ${JSON.stringify(stats.slice(0, 300))}
-            
-            Genera un mensaje motivacional MUY BREVE (máximo 15 palabras) para cada uno de estos meseros:
-            ${activeWaiters.map((w) => w.name).join(', ')}
-            
-            INSTRUCCIONES:
-            1. El mensaje debe ser personalizado si hay datos (ej: "Sigue así con ese promedio!", "Hoy es gran día para subir ese 10%").
-            2. Si no hay datos suficientes para alguno, dale uno general de ánimo.
-            3. Responde en formato JSON: { "NombreMesero": "Mensaje", ... }
-            4. Solo devuelve el JSON, nada más.
-        `;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response
-      .text()
-      .replace(/```json|```/g, '')
-      .trim();
-    return JSON.parse(text);
-  } catch (error) {
-    console.error('Motivations Error:', error);
-    return {};
-  }
-}
-
-/**
- * Genera un ranking "inteligente" que premia el esfuerzo y la mejora.
- */
-export async function getSmartRanking() {
-  const isAuth = await verifySession();
-  if (!isAuth) throw new Error('No autorizado');
-
-  try {
-    const allTips = await exportTipsCSV(); // Last 10k max
-
-    const prompt = `
-            Analiza estos datos de propinas y genera un ranking de los 3 mejores meseros.
-            No solo consideres quien tiene más propinas, sino quién tiene el mejor promedio o ha mostrado consistencia.
-            
-            DATOS:
-            ${JSON.stringify(allTips.slice(0, 200))}
-            
-            REDUCE A:
-            1. Oro (El mejor)
-            2. Plata (Mucha mejora)
-            3. Bronce (Consistencia)
-            
-            Responde en JSON:
-            [
-                {"rank": "Oro", "name": "Nombre", "reason": "Razón breve"},
-                ...
-            ]
-            Solo el JSON.
-        `;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response
-      .text()
-      .replace(/```json|```/g, '')
-      .trim();
-    return JSON.parse(text);
-  } catch (error) {
-    console.error('Smart Ranking Error:', error);
-    return [];
   }
 }

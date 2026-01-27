@@ -1,3 +1,9 @@
+/**
+ * Componente TipSelector
+ * Interfaz principal para que el cliente seleccione el porcentaje de propina.
+ * Incluye modos de selección estándar y entrada de propina libre (Custom).
+ */
+
 'use client';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
@@ -6,9 +12,13 @@ import { TipPercentage } from '@/types';
 import { TranslationType } from '@/lib/translations';
 
 interface TipSelectorProps {
+  /** Nombre del mesero que atendió la mesa, mostrado como personalización. */
   waiterName: string;
+  /** Callback ejecutado al confirmar una selección. */
   onTipSelect: (percentage: TipPercentage) => void;
+  /** Diccionario de traducciones activo. */
   text: TranslationType;
+  /** Lista de porcentajes sugeridos desde la configuración de la DB. */
   percentages: number[];
 }
 
@@ -17,12 +27,19 @@ export function TipSelector({ waiterName, onTipSelect, text, percentages }: TipS
   const [isCustomMode, setIsCustomMode] = useState(false);
   const [customValue, setCustomValue] = useState('');
 
+  /**
+   * Maneja la selección de un porcentaje predefinido.
+   * Bloquea selecciones dobles durante la transición.
+   */
   const handleSelect = (pct: TipPercentage) => {
-    if (selectedPct !== null) return; // Prevent double click
+    if (selectedPct !== null) return;
     setSelectedPct(pct);
     onTipSelect(pct);
   };
 
+  /**
+   * Valida y procesa la entrada de propina libre.
+   */
   const handleCustomSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const val = parseInt(customValue);
@@ -41,18 +58,18 @@ export function TipSelector({ waiterName, onTipSelect, text, percentages }: TipS
       className="w-full text-center relative flex flex-col items-center"
     >
       {isCustomMode ? (
-        // CUSTOM INPUT MODE
+        /* MODO DE ENTRADA MANUAL (PROPINA LIBRE) */
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="w-full max-w-md glass-card p-8 rounded-3xl relative"
+          className="w-full max-w-md glass-card p-8 rounded-[2.5rem] relative"
         >
           <div className="flex justify-start mb-6">
             <button
               onClick={() => setIsCustomMode(false)}
               className="text-monalisa-silver/60 hover:text-monalisa-gold flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-bold transition-colors"
             >
-              <ArrowLeft className="w-4 h-4" /> {text.back || 'Volver'}
+              <ArrowLeft className="w-4 h-4" /> {text.back}
             </button>
           </div>
 
@@ -61,39 +78,35 @@ export function TipSelector({ waiterName, onTipSelect, text, percentages }: TipS
           </h2>
 
           <form onSubmit={handleCustomSubmit} className="space-y-8">
-            <div className="relative group">
-              <input
-                type="number"
-                autoFocus
-                value={customValue}
-                onChange={(e) => setCustomValue(e.target.value)}
-                placeholder="0"
-                min="0"
-                max="100"
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-8 text-center text-5xl sm:text-6xl font-serif text-white focus:ring-2 focus:ring-monalisa-gold/30 focus:outline-none placeholder:text-white/5 outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-white/10"
-              />
-              <span className="absolute right-8 top-1/2 -translate-y-1/2 text-monalisa-gold/30 text-3xl font-serif">
-                %
-              </span>
-            </div>
-
+            {/* Grid de porcentajes y entrada libre */}
             <div className="grid grid-cols-3 gap-3">
-              {[10, 15, 18, 20, 25, 30].map((val) => (
+              {[15, 18, 20, 25, 30].map((val) => (
                 <button
                   key={val}
                   type="button"
                   onClick={() => setCustomValue(val.toString())}
-                  className="py-3 bg-white/5 hover:bg-monalisa-gold hover:text-monalisa-navy rounded-xl text-monalisa-silver font-medium transition-all text-sm border border-white/5"
+                  className="py-4 bg-white/5 hover:bg-monalisa-gold hover:text-monalisa-navy rounded-xl text-monalisa-silver font-serif text-xl border border-white/5 transition-all"
                 >
                   {val}%
                 </button>
               ))}
+              <div className="relative">
+                <input
+                  type="number"
+                  value={customValue}
+                  onChange={(e) => setCustomValue(e.target.value)}
+                  placeholder="0"
+                  min="0"
+                  max="100"
+                  className="w-full h-full bg-white/5 border border-white/10 rounded-xl py-4 text-center text-xl font-serif text-white focus:ring-2 focus:ring-monalisa-gold/30 focus:outline-none outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none focus:bg-white/10"
+                />
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={!customValue}
-              className="w-full bg-monalisa-gold text-monalisa-navy font-bold py-5 rounded-2xl uppercase tracking-[0.2em] text-xs hover:bg-white transition-all disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl"
+              className="w-full bg-monalisa-gold text-monalisa-navy font-bold py-5 rounded-full uppercase tracking-[0.2em] text-xs hover:bg-white transition-all disabled:opacity-20 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-xl"
             >
               <Check className="w-5 h-5" />
               {text.confirm}
@@ -101,7 +114,7 @@ export function TipSelector({ waiterName, onTipSelect, text, percentages }: TipS
           </form>
         </motion.div>
       ) : (
-        // STANDARD SELECTION MODE
+        /* MODO DE SELECCIÓN ESTÁNDAR */
         <>
           <div className="flex flex-col items-center mb-4 md:mb-6 px-4 text-center mt-2 md:mt-4">
             <motion.h2
@@ -128,6 +141,7 @@ export function TipSelector({ waiterName, onTipSelect, text, percentages }: TipS
             </motion.div>
           </div>
 
+          {/* Cuadrícula de porcentajes sugeridos */}
           <div className="grid grid-cols-2 gap-3 md:gap-4 max-w-4xl mx-auto w-full px-6">
             {percentages.map((pct, index) => (
               <motion.button
@@ -139,37 +153,38 @@ export function TipSelector({ waiterName, onTipSelect, text, percentages }: TipS
                 disabled={selectedPct !== null}
                 whileTap={{ scale: 0.96 }}
                 whileHover={{ scale: selectedPct === null ? 1.04 : 1 }}
-                className={`group relative flex flex-col items-center justify-center py-4 md:py-8 lg:py-10 rounded-2xl md:rounded-3xl border transition-all duration-500 shadow-2xl overflow-hidden
+                className={`group relative flex flex-col items-center justify-center py-4 md:py-8 lg:py-10 rounded-[2rem] border transition-all duration-500 shadow-2xl overflow-hidden
                                     ${
                                       selectedPct === pct
                                         ? 'bg-monalisa-gold border-monalisa-gold scale-105 z-10 shadow-monalisa-gold/20'
-                                        : selectedPct !== null
-                                          ? 'bg-white/5 border-white/5 opacity-20 grayscale'
-                                          : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-monalisa-gold/50 backdrop-blur-md'
+                                        : pct === 25
+                                          ? 'bg-monalisa-gold/20 border-monalisa-gold/50 shadow-monalisa-gold/10 backdrop-blur-md'
+                                          : selectedPct !== null
+                                            ? 'bg-white/5 border-white/5 opacity-20 grayscale'
+                                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-monalisa-gold/50 backdrop-blur-md'
                                     }
                                  `}
               >
-                {/* Reflejo de cristal */}
+                {/* Capa de brillo estilo cristal */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
 
                 {selectedPct === pct ? (
                   <Loader2 className="w-12 h-12 text-monalisa-navy animate-spin" />
                 ) : (
-                  <>
-                    <span
-                      className={`font-serif text-4xl md:text-6xl lg:text-7xl transition-all duration-500 drop-shadow-2xl
-                                            ${selectedPct === pct ? 'text-monalisa-navy' : 'text-white group-hover:text-monalisa-gold group-hover:scale-110'}
-                                        `}
-                    >
-                      {pct}
-                      <span className="text-2xl md:text-3xl align-top opacity-40 ml-1">%</span>
-                    </span>
-                  </>
+                  <span
+                    className={`font-serif text-4xl md:text-6xl lg:text-7xl transition-all duration-500 drop-shadow-2xl
+                                          ${selectedPct === pct || pct === 25 ? 'text-monalisa-gold' : 'text-white'}
+                                          ${selectedPct === pct ? 'text-monalisa-navy' : 'group-hover:text-monalisa-gold group-hover:scale-110'}
+                                      `}
+                  >
+                    {pct}
+                    <span className="text-2xl md:text-3xl align-top opacity-40 ml-1">%</span>
+                  </span>
                 )}
               </motion.button>
             ))}
 
-            {/* CUSTOM BUTTON */}
+            {/* BOTÓN DE PROPINA LIBRE */}
             <motion.button
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -182,7 +197,7 @@ export function TipSelector({ waiterName, onTipSelect, text, percentages }: TipS
               disabled={selectedPct !== null}
               whileTap={{ scale: 0.96 }}
               whileHover={{ scale: 1.04 }}
-              className={`group relative flex flex-col items-center justify-center py-4 md:py-8 lg:py-10 rounded-2xl md:rounded-3xl border transition-all duration-500 shadow-2xl overflow-hidden
+              className={`group relative flex flex-col items-center justify-center py-4 md:py-8 lg:py-10 rounded-[2rem] border transition-all duration-500 shadow-2xl overflow-hidden
                                 ${
                                   selectedPct !== null
                                     ? 'bg-white/5 border-white/5 opacity-20 grayscale'
@@ -200,13 +215,14 @@ export function TipSelector({ waiterName, onTipSelect, text, percentages }: TipS
             </motion.button>
           </div>
 
+          {/* AVISO LEGAL / VOLUNTARIADO */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1, duration: 1 }}
             className="mt-4 md:mt-6 max-w-xl px-4 relative z-10 pb-6"
           >
-            <div className="bg-black/20 backdrop-blur-sm border border-white/5 px-4 py-2 md:px-6 md:py-3 rounded-xl md:rounded-2xl text-center shadow-2xl">
+            <div className="bg-black/20 backdrop-blur-sm border border-white/5 px-4 py-2 md:px-6 md:py-3 rounded-full text-center shadow-2xl">
               <div className="flex items-center justify-center gap-3 mb-1 md:mb-2">
                 <span className="h-[1px] w-8 md:w-12 bg-monalisa-gold/30"></span>
                 <span className="text-monalisa-gold text-[7px] md:text-[8px] uppercase tracking-[0.4em] font-bold opacity-70">

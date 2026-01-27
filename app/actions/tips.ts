@@ -7,6 +7,7 @@ import { TipRow } from '@/types/db';
 import { RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 
 import { TipSchema } from '@/lib/schemas';
+import { headers } from 'next/headers';
 
 /**
  * Guarda un registro de propina en la base de datos MySQL.
@@ -30,13 +31,18 @@ export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'sy
     }
 
     const validData = validation.data;
-
     const pool = await getDbPool();
+
+    // Capturar metadatos del dispositivo para auditoría/prevención de fraude
+    const headerList = await headers();
+    const ip =
+      headerList.get('x-forwarded-for')?.split(',')[0] || headerList.get('x-real-ip') || 'unknown';
+    const userAgent = headerList.get('user-agent') || 'unknown';
 
     // Ejecuta la inserción en MySQL
     const query = `
-      INSERT INTO tips (tableNumber, waiterName, tipPercentage, idempotency_key) 
-      VALUES (?, ?, ?, ?)
+      INSERT INTO tips (tableNumber, waiterName, tipPercentage, idempotency_key, ip_address, user_agent) 
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     const [result] = await pool.execute(query, [
@@ -44,11 +50,13 @@ export async function saveTipToDb(data: Omit<TipRecord, 'id' | 'createdAt' | 'sy
       validData.waiterName,
       validData.tipPercentage,
       validData.idempotencyKey || null,
+      ip,
+      userAgent.substring(0, 500),
     ]);
 
     // Verifica que la inserción haya sido exitosa
     if ((result as ResultSetHeader).affectedRows === 0) {
-      throw new Error('MySQL insert failed, no rows affected.');
+      throw new Error('La inserción en MySQL falló, no se afectaron filas.');
     }
 
     return { success: true };
@@ -120,7 +128,7 @@ export async function getTips(
 
     // 2. Obtener los datos reales paginados
     const dataQuery = `
-      SELECT id, tableNumber, waiterName, tipPercentage, createdAt 
+      SELECT id, tableNumber, waiterName, tipPercentage, createdAt, ip_address, user_agent
       FROM tips 
       WHERE ${whereClause}
       ORDER BY createdAt DESC
@@ -139,6 +147,8 @@ export async function getTips(
       waiterName: tip.waiterName,
       tipPercentage: tip.tipPercentage,
       createdAt: tip.createdAt.toString(),
+      ipAddress: tip.ip_address,
+      userAgent: tip.user_agent,
       synced: true,
     })) as TipRecord[];
 
@@ -228,7 +238,7 @@ export async function exportTipsCSV(filters?: TipsFilter): Promise<TipRecord[]> 
     const { whereClause, queryParams } = buildTipsQuery(filters);
 
     const query = `
-      SELECT id, tableNumber, waiterName, tipPercentage, createdAt 
+      SELECT id, tableNumber, waiterName, tipPercentage, createdAt, ip_address, user_agent
       FROM tips 
       WHERE ${whereClause}
       ORDER BY createdAt DESC
@@ -243,11 +253,13 @@ export async function exportTipsCSV(filters?: TipsFilter): Promise<TipRecord[]> 
       waiterName: tip.waiterName,
       tipPercentage: tip.tipPercentage,
       createdAt: tip.createdAt.toString(),
+      ipAddress: tip.ip_address,
+      userAgent: tip.user_agent,
       synced: true,
     })) as TipRecord[];
   } catch (error) {
-    console.error('Error fetching tips for export:', error);
-    throw new Error('Failed to fetch tips for export');
+    console.error('Error al exportar propinas:', error);
+    throw new Error('Error al obtener propinas para exportación');
   }
 }
 

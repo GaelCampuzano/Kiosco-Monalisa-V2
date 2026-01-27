@@ -17,6 +17,8 @@ export interface TipRecord {
   createdAt: string;
   synced: boolean;
   idempotencyKey?: string;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 export type KioskStep = 'WAITER_INPUT' | 'CLIENT_SELECTION' | 'THANK_YOU';

@@ -1,6 +1,5 @@
 import { verifySession } from '@/lib/auth-check';
 import { redirect } from 'next/navigation';
-
 import { AIChat } from './components/AIChat';
 import { Background } from '@/app/components/Background';
 

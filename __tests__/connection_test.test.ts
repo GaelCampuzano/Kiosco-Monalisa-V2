@@ -6,7 +6,10 @@ import { loadEnv } from 'vite';
 describe('Database Connection', () => {
   beforeAll(() => {
     const env = loadEnv('', process.cwd(), '');
-    process.env.DATABASE_URL = env.DATABASE_URL;
+    process.env.MYSQL_HOST = env.MYSQL_HOST || '127.0.0.1';
+    process.env.MYSQL_USER = env.MYSQL_USER || 'root';
+    process.env.MYSQL_PASSWORD = env.MYSQL_PASSWORD || '';
+    process.env.MYSQL_DATABASE = env.MYSQL_DATABASE || 'test_db';
   });
 
   it('should connect to the database and execute a query', async () => {

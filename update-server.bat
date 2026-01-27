@@ -1,15 +1,17 @@
 @echo off
 :: Asegurar directorio correcto
 cd /d "%~dp0"
+setlocal enabledelayedexpansion
 title Actualizador Kiosco Monalisa V2
 
 echo [1/4] Cerrando servidor actual...
+:: Buscamos procesos en el puerto 3000 de forma robusta
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3000') do (
     taskkill /f /pid %%a >nul 2>&1
 )
 
 echo [2/4] Actualizando dependencias...
-call npm install --omit=dev
+call npm install
 
 echo [3/4] Re-construyendo proyecto (Optimizado)...
 call npm run build

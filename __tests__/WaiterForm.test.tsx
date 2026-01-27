@@ -11,17 +11,18 @@ describe('WaiterForm', () => {
     setWaiterName: vi.fn(),
     onSubmit: vi.fn(),
     text: translations.es,
+    waiters: [{ id: 1, name: 'John', active: true }],
   };
 
   it('renders correctly', () => {
     render(<WaiterForm {...defaultProps} />);
     expect(screen.getByText(translations.es.waiterTitle)).toBeDefined();
-    expect(screen.getByPlaceholderText('#')).toBeDefined();
+    expect(screen.getByPlaceholderText('00')).toBeDefined();
   });
 
   it('validates numeric input for table number', () => {
     render(<WaiterForm {...defaultProps} />);
-    const input = screen.getByPlaceholderText('#');
+    const input = screen.getByPlaceholderText('00');
 
     fireEvent.change(input, { target: { value: '123' } });
     expect(defaultProps.setTableNumber).toHaveBeenCalledWith('123');

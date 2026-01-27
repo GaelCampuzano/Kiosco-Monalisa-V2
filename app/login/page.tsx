@@ -1,3 +1,9 @@
+/**
+ * Página de Inicio de Sesión (LoginPage)
+ * Punto de entrada seguro para administradores.
+ * Utiliza Server Actions para validación y Framer Motion para una experiencia visual fluida.
+ */
+
 'use client';
 
 import { useState, useEffect, useSyncExternalStore } from 'react';
@@ -15,8 +21,17 @@ const initialState = {
 };
 
 export default function LoginPage() {
+  /**
+   * Manejador de estado del formulario de inicio de sesión.
+   * Proporciona feedback sobre errores y estado de carga (isPending).
+   */
   const [state, formAction, isPending] = useActionState(login, initialState);
   const [logoError, setLogoError] = useState(false);
+
+  /**
+   * Suscripción al estado de red del navegador.
+   * Permite desactivar o alertar sobre funciones que requieren conectividad durante el login.
+   */
   const isOffline = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   function subscribe(callback: () => void) {
@@ -37,7 +52,10 @@ export default function LoginPage() {
     return false;
   }
 
-  // Pre-cargar y cachear logo cuando esté online
+  /**
+   * Pre-carga y cacheo del logo institucional.
+   * Garantiza que el logo sea visible incluso tras recargas sin conexión (Cache Storage API).
+   */
   useEffect(() => {
     if (!isOffline && typeof window !== 'undefined' && 'caches' in window) {
       const cacheLogo = async () => {
@@ -51,7 +69,7 @@ export default function LoginPage() {
             }
           }
         } catch {
-          // Silenciar errores
+          // Fallo silencioso de caché
         }
       };
       cacheLogo();
@@ -60,6 +78,7 @@ export default function LoginPage() {
 
   return (
     <div className="h-screen h-[100dvh] bg-monalisa-navy flex items-center justify-center p-4 sm:p-6 relative overflow-hidden selection:bg-monalisa-gold selection:text-monalisa-navy">
+      {/* Fondo dinámico de partículas/gradientes */}
       <Background />
 
       <motion.div
@@ -68,7 +87,7 @@ export default function LoginPage() {
         transition={{ duration: 0.8, ease: 'easeOut' }}
         className="w-full max-w-md"
       >
-        {/* Botón Volver al Kiosco */}
+        {/* Enlace de retorno al flujo operativo del Kiosco */}
         <Link
           href="/"
           className="group flex items-center gap-2 text-monalisa-silver/50 hover:text-monalisa-gold transition-colors mb-6 sm:mb-8 text-[10px] sm:text-xs font-bold tracking-widest uppercase w-fit"
@@ -77,30 +96,27 @@ export default function LoginPage() {
           Regresar al Kiosco
         </Link>
 
-        {/* Tarjeta de Login */}
+        {/* CONTENEDOR PRINCIPAL: Tarjeta con efecto Glassmorphism */}
         <motion.div
           className="glass-card p-6 sm:p-8 md:p-12 rounded-2xl shadow-2xl relative overflow-hidden"
           initial={{ scale: 0.95 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.1, duration: 0.5 }}
         >
-          {/* Brillo superior decorativo */}
+          {/* Detalles estéticos de iluminación superior */}
           <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-monalisa-gold/50 to-transparent opacity-50" />
 
           <div className="text-center mb-10">
-            {/* LOGO CON SPOTLIGHT EN LOGIN */}
+            {/* COMPONENTE DE LOGO CON EFECTO SPOTLIGHT */}
             <motion.div
               className="relative w-full h-24 sm:h-32 mx-auto mb-4 sm:mb-6 flex items-center justify-center hover:scale-105 transition-transform duration-500"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.6 }}
             >
-              {/* Luz de fondo difusa */}
               <div className="absolute inset-0 bg-[radial-gradient(closest-side,rgba(255,255,255,0.8)_20%,transparent_100%)] blur-xl" />
 
-              {/* Logo */}
               <div className="relative w-48 h-20 sm:w-64 sm:h-28">
-                {/* Lógica modificada: solo comprueba logoError */}
                 {!logoError ? (
                   <Image
                     src="/logo-monalisa.svg"
@@ -125,24 +141,24 @@ export default function LoginPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <h1 className="font-serif text-2xl sm:text-3xl text-white mb-2 tracking-wide">
+              <h1 className="font-serif text-2xl sm:text-3xl text-white mb-2 tracking-wide uppercase">
                 Acceso Administrativo
               </h1>
-              <p className="text-monalisa-silver/60 text-xs sm:text-sm font-light">
-                Sistema de Gestión Sunset Monalisa
+              <p className="text-monalisa-silver/60 text-[10px] sm:text-xs font-bold tracking-[0.2em] uppercase">
+                Sistema de Control Monalisa
               </p>
             </motion.div>
           </div>
 
           <form action={formAction} className="space-y-4 sm:space-y-6">
-            {/* Input Usuario */}
+            {/* Campo: Identificador de Usuario */}
             <motion.div
               className="space-y-2 group"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
             >
-              <label className="text-xs font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">
+              <label className="text-[10px] font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">
                 Usuario
               </label>
               <div className="relative">
@@ -151,20 +167,20 @@ export default function LoginPage() {
                   name="user"
                   type="text"
                   required
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-monalisa-gold outline-none transition-all placeholder:text-monalisa-silver/10 font-serif"
-                  placeholder="admin"
+                  className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-4 text-white focus:border-monalisa-gold outline-none transition-all placeholder:text-monalisa-silver/10 font-serif"
+                  placeholder="Usuario admin"
                 />
               </div>
             </motion.div>
 
-            {/* Input Contraseña */}
+            {/* Campo: Clave de Acceso */}
             <motion.div
               className="space-y-2 group"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <label className="text-xs font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">
+              <label className="text-[10px] font-bold text-monalisa-bronze uppercase tracking-widest ml-1 group-focus-within:text-monalisa-gold transition-colors">
                 Contraseña
               </label>
               <div className="relative">
@@ -173,13 +189,13 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   required
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:border-monalisa-gold outline-none transition-all placeholder:text-monalisa-silver/10 font-serif"
+                  className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-4 text-white focus:border-monalisa-gold outline-none transition-all placeholder:text-monalisa-silver/10 font-serif"
                   placeholder="••••••••"
                 />
               </div>
             </motion.div>
 
-            {/* Mensaje de Error */}
+            {/* Feedback de error capturado desde el servidor */}
             {state?.error && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
@@ -190,7 +206,7 @@ export default function LoginPage() {
               </motion.div>
             )}
 
-            {/* Botón Submit con animación de carga */}
+            {/* Botón de envío con estado de carga integrado */}
             <motion.button
               type="submit"
               disabled={isPending}
@@ -199,12 +215,12 @@ export default function LoginPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="w-full bg-monalisa-bronze hover:bg-monalisa-gold hover:text-monalisa-navy text-white font-bold py-4 rounded-xl uppercase tracking-[0.2em] text-xs transition-colors duration-300 shadow-[0_0_15px_rgba(147,119,55,0.2)] hover:shadow-[0_0_25px_rgba(223,200,148,0.4)] disabled:opacity-50 disabled:cursor-not-allowed mt-4 flex items-center justify-center"
+              className="w-full bg-monalisa-bronze hover:bg-monalisa-gold hover:text-monalisa-navy text-white font-bold py-4 rounded-full uppercase tracking-[0.2em] text-[10px] transition-all duration-300 shadow-[0_0_15px_rgba(147,119,55,0.2)] hover:shadow-[0_0_25px_rgba(223,200,148,0.4)] disabled:opacity-50 disabled:cursor-not-allowed mt-4 flex items-center justify-center"
             >
               {isPending ? (
                 <>
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Verificando...
+                  Verificando credenciales...
                 </>
               ) : (
                 'Iniciar Sesión'
@@ -213,13 +229,14 @@ export default function LoginPage() {
           </form>
         </motion.div>
 
+        {/* Footer legal/versión */}
         <motion.div
-          className="text-center mt-8 text-monalisa-silver/20 text-xs font-serif italic"
+          className="text-center mt-8 text-monalisa-silver/20 text-[10px] font-serif italic tracking-widest"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          Solo personal autorizado • v1.0
+          Solo personal autorizado • 2026 Sunset Monalisa
         </motion.div>
       </motion.div>
     </div>

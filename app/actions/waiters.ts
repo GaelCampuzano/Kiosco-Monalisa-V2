@@ -1,5 +1,6 @@
 'use server';
 
+import { unstable_cache, revalidatePath } from 'next/cache';
 import { getDbPool } from '@/lib/db';
 import { ResultSetHeader } from 'mysql2/promise';
 import { verifySession } from '@/lib/auth-check';
@@ -14,25 +15,27 @@ export interface Waiter {
 /**
  * Obtiene la lista de meseros activos ordenada alfabéticamente.
  */
-export async function getActiveWaiters(): Promise<Waiter[]> {
-  try {
-    const pool = await getDbPool();
-    const [rows] = await pool.query<WaiterRow[]>(
-      `SELECT id, name, active FROM waiters WHERE active = true ORDER BY name ASC`
-    );
+export const getActiveWaiters = unstable_cache(
+  async (): Promise<Waiter[]> => {
+    try {
+      const pool = await getDbPool();
+      const [rows] = await pool.query<WaiterRow[]>(
+        `SELECT id, name, active FROM waiters WHERE active = true ORDER BY name ASC`
+      );
 
-    return (rows as WaiterRow[]).map((row) => ({
-      id: Number(row.id),
-      name: String(row.name),
-      active: !!row.active,
-    }));
-  } catch (error) {
-    console.error('Error fetching active waiters:', error);
-    return [];
-  } finally {
-    // console.log("Finished getActiveWaiters");
-  }
-}
+      return (rows as WaiterRow[]).map((row) => ({
+        id: Number(row.id),
+        name: String(row.name),
+        active: !!row.active,
+      }));
+    } catch (error) {
+      console.error('Error fetching active waiters:', error);
+      return [];
+    }
+  },
+  ['active-waiters'],
+  { revalidate: 3600, tags: ['waiters'] }
+);
 
 /**
  * Obtiene TODOS los meseros (activos e inactivos) para el admin.
@@ -90,6 +93,7 @@ export async function createWaiter(
       active: true,
     };
 
+    revalidatePath('/', 'layout');
     return { success: true, waiter: newWaiter };
   } catch (error: unknown) {
     if ((error as { code?: string }).code === 'ER_DUP_ENTRY') {
@@ -113,6 +117,7 @@ export async function toggleWaiterStatus(
   try {
     const pool = await getDbPool();
     await pool.execute(`UPDATE waiters SET active = ? WHERE id = ?`, [!currentStatus, id]);
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error) {
     console.error('Error toggling waiter status:', error);
@@ -138,6 +143,7 @@ export async function updateWaiterName(
   try {
     const pool = await getDbPool();
     await pool.execute(`UPDATE waiters SET name = ? WHERE id = ?`, [cleanName, id]);
+    revalidatePath('/', 'layout');
     return { success: true };
   } catch (error: unknown) {
     if ((error as { code?: string }).code === 'ER_DUP_ENTRY') {

@@ -1,8 +1,13 @@
+/**
+ * Componente WaitersTable
+ * Permite la gestión completa del staff de meseros: creación, edición y activación/desactivación.
+ * Implementa actualizaciones optimistas para una sensación de velocidad inmediata.
+ */
+
 'use client';
 
 import { useState } from 'react';
 import { Button } from '@/app/components/ui/button';
-// import { Input } from "@/app/components/ui/input";
 import {
   Card,
   CardContent,
@@ -23,19 +28,25 @@ interface Waiter {
 }
 
 interface WaitersTableProps {
+  /** Lista completa de meseros (activos e inactivos). */
   waiters: Waiter[];
+  /** Estado de carga de la lista desde el servidor. */
   loading: boolean;
+  /** Función para refrescar los datos desde la fuente de verdad. */
   onRefresh: () => void;
+  /** Función para actualizar el estado local de meseros (para actualizaciones optimistas). */
   onUpdate: (waiters: Waiter[]) => void;
 }
 
 export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersTableProps) {
   const [newWaiterName, setNewWaiterName] = useState('');
-  // const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editName, setEditName] = useState('');
 
+  /**
+   * Crea un nuevo mesero y refresca la lista global tras el éxito.
+   */
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWaiterName.trim()) return;
@@ -45,18 +56,21 @@ export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersT
       if (result.success && result.waiter) {
         toast.success('Mesero agregado correctamente');
         setNewWaiterName('');
-        onRefresh(); // Recargar lista centralizada
+        onRefresh();
       } else {
-        toast.error(result.error || 'Error al crear');
+        toast.error(result.error || 'Error al crear mesero');
       }
     } catch {
-      toast.error('Error inesperado');
+      toast.error('Error inesperado durante la creación');
     }
   };
 
+  /**
+   * Cambia el estado (activo/inactivo) de un mesero de forma optimista.
+   */
   const handleToggle = async (id: number, currentStatus: boolean) => {
     try {
-      // Optimistic update locally
+      // Cambio optimista: Actualizamos la UI inmediatamente antes de que el servidor responda
       const updatedWaiters = waiters.map((w) =>
         w.id === id ? { ...w, active: !currentStatus } : w
       );
@@ -64,49 +78,53 @@ export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersT
 
       const result = await toggleWaiterStatus(id, currentStatus);
       if (!result.success) {
-        // Revert if failed
+        // Reversión: Si el servidor falla, volvemos al estado anterior
         onUpdate(waiters);
         toast.error(result.error);
       } else {
-        toast.success(`Estado actualizado`);
+        toast.success(`Estado actualizado exitosamente`);
       }
     } catch {
-      toast.error('Error de conexión');
+      toast.error('Error de conexión con el servidor');
+      onUpdate(waiters);
     }
   };
 
+  /** Inicia el modo de edición de nombre para una fila específica. */
   const startEditing = (waiter: Waiter) => {
     setEditingId(waiter.id);
     setEditName(waiter.name);
   };
 
+  /** Cancela la edición y limpia los buffers temporales. */
   const cancelEditing = () => {
     setEditingId(null);
     setEditName('');
   };
 
+  /** Persiste los cambios de nombre en el servidor. */
   const saveEdit = async () => {
     if (!editingId || !editName.trim()) return;
 
     try {
       const res = await updateWaiterName(editingId, editName);
       if (res.success) {
-        // Update both local view and parent state via onUpdate if needed,
-        // but since we are editing parent's list:
+        // Sincronizar estado local con el nombre editado
         const updated = waiters.map((w) => (w.id === editingId ? { ...w, name: editName } : w));
         onUpdate(updated);
 
         setEditingId(null);
         setEditName('');
-        toast.success('Nombre actualizado');
+        toast.success('Nombre actualizado correctamente');
       } else {
         toast.error(res.error || 'Error al actualizar');
       }
     } catch {
-      toast.error('Error de conexión');
+      toast.error('Error de red al intentar actualizar');
     }
   };
 
+  /** Filtra los meseros visibles según la consulta de búsqueda rápida. */
   const filteredWaiters = waiters.filter((w) =>
     w.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -117,7 +135,7 @@ export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersT
         <div>
           <CardTitle className="text-xl text-monalisa-gold">Gestión de Meseros</CardTitle>
           <CardDescription className="text-monalisa-silver/70">
-            Administra quién aparece en la lista de selección del kiosco.
+            Controla quién aparece en la lista pública del kiosco.
           </CardDescription>
         </div>
         <Button
@@ -130,13 +148,13 @@ export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersT
         </Button>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* SEARCH & ADD BAR */}
+        {/* BARRA DE BÚSQUEDA Y CREACIÓN RÁPIDA */}
         <div className="flex flex-col sm:flex-row gap-4 justify-between items-center mb-6 bg-white/5 p-4 rounded-xl border border-white/5">
           <div className="relative w-full sm:w-auto flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-monalisa-silver/50" />
             <input
               type="text"
-              placeholder="Buscar mesero..."
+              placeholder="Filtrar por nombre..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-monalisa-navy/50 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-sm text-monalisa-silver placeholder:text-monalisa-silver/30 focus:border-monalisa-gold/50 focus:outline-none transition-colors"
@@ -148,7 +166,7 @@ export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersT
               type="text"
               value={newWaiterName}
               onChange={(e) => setNewWaiterName(e.target.value)}
-              placeholder="Nuevo mesero..."
+              placeholder="Nombre del nuevo mesero"
               className="flex-1 sm:w-64 bg-monalisa-navy/50 border border-white/10 rounded-lg px-4 py-2 text-sm text-monalisa-silver placeholder:text-monalisa-silver/30 focus:border-monalisa-gold/50 focus:outline-none transition-colors"
             />
             <button
@@ -161,19 +179,19 @@ export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersT
           </form>
         </div>
 
-        {/* TABLE */}
+        {/* ESTRUCTURA DE LA TABLA */}
         <div className="bg-white/5 rounded-2xl border border-white/5 overflow-hidden shadow-xl">
           <table className="w-full">
-            <thead className="bg-monalisa-navy border-b border-white/5">
+            <thead className="bg-[#0f1e33]/50 border-b border-white/5">
               <tr>
-                <th className="text-left py-4 px-6 text-xs uppercase tracking-wider text-monalisa-gold font-bold">
-                  Estado
+                <th className="text-left py-4 px-6 text-[10px] uppercase tracking-wider text-monalisa-gold font-bold">
+                  Visibilidad
                 </th>
-                <th className="text-left py-4 px-6 text-xs uppercase tracking-wider text-monalisa-gold font-bold">
-                  Mesero
+                <th className="text-left py-4 px-6 text-[10px] uppercase tracking-wider text-monalisa-gold font-bold">
+                  Colaborador
                 </th>
-                <th className="text-right py-4 px-6 text-xs uppercase tracking-wider text-monalisa-gold font-bold">
-                  Acciones
+                <th className="text-right py-4 px-6 text-[10px] uppercase tracking-wider text-monalisa-gold font-bold">
+                  Gestión
                 </th>
               </tr>
             </thead>
@@ -189,35 +207,35 @@ export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersT
                     className="hover:bg-white/[0.02] transition-colors"
                   >
                     <td className="py-4 px-6">
+                      {/* Switch de activación de mesero */}
                       <button
                         onClick={() => handleToggle(waiter.id, waiter.active)}
-                        className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ease-in-out relative ${waiter.active ? 'bg-monalisa-gold' : 'bg-white/10'}`}
+                        className={`w-10 h-5 rounded-full p-1 transition-colors duration-300 relative ${waiter.active ? 'bg-monalisa-gold' : 'bg-white/10'}`}
                       >
                         <div
-                          className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${waiter.active ? 'translate-x-6' : 'translate-x-0'}`}
+                          className={`w-3 h-3 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${waiter.active ? 'translate-x-5' : 'translate-x-0'}`}
                         />
                       </button>
                     </td>
                     <td className="py-4 px-6">
                       {editingId === waiter.id ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            className="bg-monalisa-navy/80 border border-monalisa-gold/50 rounded px-2 py-1 text-white text-sm focus:outline-none w-full max-w-[200px]"
-                            autoFocus
-                          />
-                        </div>
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="bg-monalisa-navy/80 border border-monalisa-gold/50 rounded px-2 py-1 text-white text-sm focus:outline-none w-full max-w-[200px]"
+                          autoFocus
+                          onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                        />
                       ) : (
                         <div className="flex items-center gap-3">
                           <div
-                            className={`p-2 rounded-full ${waiter.active ? 'bg-monalisa-gold/10 text-monalisa-gold' : 'bg-white/5 text-monalisa-silver/40'}`}
+                            className={`p-1.5 rounded-full ${waiter.active ? 'bg-monalisa-gold/10 text-monalisa-gold' : 'bg-white/5 text-monalisa-silver/30'}`}
                           >
-                            <User className="w-4 h-4" />
+                            <User className="w-3.5 h-3.5" />
                           </div>
                           <span
-                            className={`font-medium ${waiter.active ? 'text-white' : 'text-monalisa-silver/50 dashed'}`}
+                            className={`text-sm tracking-wide ${waiter.active ? 'text-white' : 'text-monalisa-silver/40 line-through'}`}
                           >
                             {waiter.name}
                           </span>
@@ -229,13 +247,13 @@ export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersT
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={saveEdit}
-                            className="p-2 hover:bg-green-500/20 text-green-400 rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-green-500/20 text-green-400 rounded transition-colors"
                           >
                             <Check className="w-4 h-4" />
                           </button>
                           <button
                             onClick={cancelEditing}
-                            className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-red-500/20 text-red-400 rounded transition-colors"
                           >
                             <X className="w-4 h-4" />
                           </button>
@@ -243,20 +261,23 @@ export function WaitersTable({ waiters, loading, onRefresh, onUpdate }: WaitersT
                       ) : (
                         <button
                           onClick={() => startEditing(waiter)}
-                          className="p-2 hover:bg-white/10 text-monalisa-silver/50 hover:text-monalisa-gold rounded-lg transition-colors"
+                          className="p-1.5 hover:bg-white/10 text-monalisa-silver/30 hover:text-monalisa-gold rounded transition-colors"
                           title="Editar nombre"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Pencil className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </td>
                   </motion.tr>
                 ))}
               </AnimatePresence>
-              {!loading && waiters.length === 0 && (
+              {!loading && filteredWaiters.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="p-8 text-center text-monalisa-silver/50">
-                    No hay meseros registrados.
+                  <td
+                    colSpan={3}
+                    className="p-8 text-center text-monalisa-silver/40 italic text-xs"
+                  >
+                    Sin meseros que mostrar.
                   </td>
                 </tr>
               )}

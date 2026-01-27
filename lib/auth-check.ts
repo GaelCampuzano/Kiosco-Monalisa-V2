@@ -1,6 +1,10 @@
 import { cookies } from 'next/headers';
-// import { redirect } from 'next/navigation';
 
+/**
+ * Verifica si la sesión actual del administrador es válida.
+ *
+ * @returns {Promise<boolean>} Verdadero si la cookie de sesión existe y es correcta.
+ */
 export async function verifySession() {
   const cookieStore = await cookies();
   const authCookie = cookieStore.get('monalisa_admin_session');
@@ -11,9 +15,15 @@ export async function verifySession() {
   return true;
 }
 
+/**
+ * Middleware interno para rutas protegidas o Server Actions.
+ * Lanza un error si la sesión no está autenticada.
+ *
+ * @throws {Error} Si el usuario no tiene una sesión válida.
+ */
 export async function requireAuth() {
   const isAuth = await verifySession();
   if (!isAuth) {
-    throw new Error('Unauthorized');
+    throw new Error('No autorizado');
   }
 }

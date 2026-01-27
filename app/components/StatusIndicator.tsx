@@ -1,14 +1,22 @@
-// app/components/StatusIndicator.tsx
+/**
+ * Componente StatusIndicator
+ * Muestra visualmente el estado de la conexión a internet y el progreso de sincronización.
+ * Ubicado en la esquina superior derecha del Kiosco.
+ */
+
 import React from 'react';
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
 import { TranslationType } from '@/lib/translations';
 
 interface StatusIndicatorProps {
+  /** Indica si la aplicación está operando en modo sin conexión. */
   isOffline: boolean;
+  /** Indica si hay un proceso activo de sincronización de datos con el servidor. */
   isSyncing?: boolean;
+  /** Cantidad de registros pendientes por sincronizar en el almacenamiento local. */
   pendingCount?: number;
+  /** Objeto de traducciones según el idioma actual (ES/EN). */
   text: TranslationType;
 }
 
@@ -18,9 +26,10 @@ export function StatusIndicator({
   pendingCount = 0,
   text,
 }: StatusIndicatorProps) {
-  // Determinar estado: Sincronizando > Offline > Online
+  // Determinar la prioridad del estado visual: Sincronizando > Offline > Online
   const state = isSyncing ? 'syncing' : isOffline ? 'offline' : 'online';
 
+  /** Estilos de fondo y bordes según el estado */
   const styles = {
     syncing:
       'bg-blue-900/40 border-blue-500/30 text-blue-100 shadow-[0_0_20px_rgba(59,130,246,0.2)]',
@@ -29,6 +38,7 @@ export function StatusIndicator({
     online: 'bg-emerald-900/30 border-emerald-500/20 text-emerald-100/90 hover:bg-emerald-900/40',
   };
 
+  /** Colores de texto para mejorar la legibilidad del estado */
   const textColors = {
     syncing: 'text-blue-200',
     offline: 'text-amber-200',
@@ -39,7 +49,7 @@ export function StatusIndicator({
     <motion.div
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`absolute top-4 right-4 sm:top-8 sm:right-8 z-30 flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg backdrop-blur-md border transition-all duration-500 ${styles[state]}`}
+      className={`absolute top-4 right-4 sm:top-8 sm:right-8 z-30 flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-1 sm:py-2 rounded-full backdrop-blur-md border transition-all duration-500 ${styles[state]}`}
     >
       <AnimatePresence mode="wait">
         {state === 'syncing' ? (
@@ -79,7 +89,7 @@ export function StatusIndicator({
         <span
           className={`text-[10px] sm:text-xs font-bold tracking-widest uppercase ${textColors[state]}`}
         >
-          {state === 'syncing' ? 'Syncing...' : state === 'offline' ? text.offline : text.online}
+          {state === 'syncing' ? text.syncing : state === 'offline' ? text.offline : text.online}
         </span>
 
         <AnimatePresence>
@@ -90,10 +100,10 @@ export function StatusIndicator({
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="text-[9px] sm:text-[10px] font-light opacity-90 leading-tight max-w-[120px] sm:max-w-[160px] mt-0.5 sm:mt-1 opacity-90"
+              className="text-[9px] sm:text-[10px] font-light opacity-90 leading-tight max-w-[120px] sm:max-w-[160px] mt-0.5 sm:mt-1"
             >
               {isSyncing
-                ? `${pendingCount} items remaining`
+                ? `${pendingCount} ${text.itemsRemaining}`
                 : isOffline
                   ? pendingCount > 0
                     ? `${text.offlineMsg} (${pendingCount})`

@@ -11,7 +11,6 @@ import {
   CardTitle,
   CardDescription,
 } from '@/app/components/ui/card';
-import { Gamification } from './Gamification';
 
 export function AIAnalyst() {
   const [analysis, setAnalysis] = useState<string | null>(null);
@@ -128,8 +127,6 @@ export function AIAnalyst() {
           </AnimatePresence>
         </CardContent>
       </Card>
-
-      <Gamification />
     </div>
   );
 }

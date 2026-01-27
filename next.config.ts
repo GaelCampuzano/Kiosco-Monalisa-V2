@@ -8,6 +8,7 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === 'development',
   workboxOptions: {
     disableDevLogs: true,
+    maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB limit for precaching (fixes warning for large fonts)
   },
 });
 
