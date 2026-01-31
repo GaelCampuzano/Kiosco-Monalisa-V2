@@ -52,7 +52,7 @@ export function Background() {
       {!imageError && (
         <div className="absolute inset-0 w-full h-full">
           <Image
-            src="/bkg.jpg"
+            src="/bkg.webp"
             alt="Fondo Sunset Monalisa"
             fill
             priority

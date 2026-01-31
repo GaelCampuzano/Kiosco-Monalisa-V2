@@ -100,14 +100,13 @@ export type PaginatedResponse = {
  *
  * @param page - Número de página actual (por defecto 1).
  * @param limit - Cantidad de registros por página (por defecto 20).
- * @param _filters - Filtros opcionales (fecha, búsqueda).
+ * @param filters - Filtros opcionales (fecha, búsqueda).
  * @returns Objeto con los datos paginados y metadatos de paginación.
  */
 export async function getTips(
   page: number = 1,
   limit: number = 10,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _filters?: TipsFilter
+  filters?: TipsFilter
 ): Promise<PaginatedResponse> {
   try {
     // Verificación de seguridad
@@ -115,9 +114,8 @@ export async function getTips(
     const pool = await getDbPool();
     const offset = (page - 1) * limit;
 
-    // Construcción dinámica de filtros (WHERE clause)
-    const whereClause = '1=1';
-    const queryParams: (string | number | Date)[] = [];
+    // Construcción dinámica de filtros usando el helper privado
+    const { whereClause, queryParams } = buildTipsQuery(filters);
 
     // 1. Obtener total de registros para calcular el número de páginas
     const countQuery = `SELECT COUNT(*) as total FROM tips WHERE ${whereClause}`;
@@ -135,10 +133,10 @@ export async function getTips(
       LIMIT ? OFFSET ?
     `;
 
-    // Añadir limit y offset al final de los parámetros de la consulta
-    queryParams.push(limit, offset);
+    // Añadir limit y offset al final de los parámetros para la consulta de datos
+    const dataQueryParams = [...queryParams, limit, offset];
 
-    const [rows] = await pool.query<TipRow[]>(dataQuery, queryParams);
+    const [rows] = await pool.query<TipRow[]>(dataQuery, dataQueryParams);
 
     // Mapeo de datos de la DB al formato de la aplicación
     const data = (rows as TipRow[]).map((tip) => ({

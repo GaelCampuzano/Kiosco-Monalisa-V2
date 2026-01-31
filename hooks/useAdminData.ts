@@ -6,6 +6,19 @@ import { getAllWaiters, Waiter } from '@/app/actions/waiters';
 import { getTipPercentages } from '@/app/actions/settings';
 
 /**
+ * Utilidad simple de debounce para limitar la frecuencia de ejecución de funciones.
+ * Útil para evitar peticiones excesivas durante la escritura en campos de búsqueda.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
+  let timeout: NodeJS.Timeout;
+  return function (this: unknown, ...args: Parameters<T>) {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
+}
+
+/**
  * Hook personalizado para gestionar la lógica de datos del Panel de Administración.
  * Centraliza el estado, la carga de datos y las operaciones de exportación.
  *
@@ -27,19 +40,6 @@ export function useAdminData() {
   // Controladores de carga única (caché)
   const hasLoadedWaiters = useRef(false);
   const hasLoadedSettings = useRef(false);
-
-  /**
-   * Utilidad simple de debounce para limitar la frecuencia de ejecución de funciones.
-   * Útil para evitar peticiones excesivas durante la escritura en campos de búsqueda.
-   */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
-    let timeout: NodeJS.Timeout;
-    return function (this: unknown, ...args: Parameters<T>) {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(this, args), wait);
-    };
-  }
 
   // Estados para métricas
   const [stats, setStats] = useState({

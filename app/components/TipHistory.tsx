@@ -67,7 +67,7 @@ export function TipHistory({ isOpen, onClose, history, text }: TipHistoryProps) 
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-2 px-3 py-1 bg-monalisa-gold/10 rounded-full border border-monalisa-gold/20">
                         <span className="text-monalisa-gold font-serif text-xl">
-                          {tip.tipPercentage}%
+                          {tip.tipPercentage}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5 text-monalisa-silver/40 text-[10px] uppercase font-bold">
