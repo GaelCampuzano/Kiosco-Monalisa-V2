@@ -1,27 +1,25 @@
 # Kiosco Monalisa v2
 
-Sistema de gestión de propinas digital para Sunset Monalisa. Aplicación web moderna diseñada para facilitar la selección de propinas por parte de los clientes y la gestión administrativa de las mismas.
+Sistema de gestión de propinas digital para Sunset Monalisa. Aplicación web de alto rendimiento diseñada para facilitar la selección de propinas por parte de los clientes y optimizar la administración interna.
 
 ## 🎯 Características Principales
 
 - **Interfaz de Usuario Premium**: Diseño elegante y moderno utilizando **shadcn/ui** y **Tailwind CSS 4**.
-- **Sistema de Propinas Intuitivo**: Selección rápida de porcentajes con feedback visual y animaciones (**Framer Motion**, **Canvas Confetti**).
-- **Modo Oscuro**: Soporte nativo para temas claro y oscuro.
-- **Panel de Administración Completo**:
-  - **Dashboard**: Métricas clave y gráficos de rendimiento.
-  - **Gestión de Propinas**: Tabla detallada con filtros por fecha, mesero y búsqueda.
-  - **Gestión de Meseros**: Alta, baja y administración de personal de servicio.
-  - **Configuración**: Ajuste dinámico de porcentajes de propina permitidos.
-  - **Exportación**: Descarga de reportes en formato CSV.
-- **Rastreo de Tickets**: Página pública para que los clientes consulten el estado de su ticket.
-- **PWA Ready**: Aplicación instalable con soporte offline básico (`next-pwa`).
-- **Internacionalización**: Soporte bilingüe (Español/Inglés).
-- **Base de Datos**: MySQL (compatible con proveedores como PlanetScale, AWS RDS, Azure o local).
-- **Seguridad**: Autenticación básica para administración y rutas protegidas.
+- **Optimización de Recursos**: Uso de imágenes en formato **WebP** y carga diferida para un rendimiento superior.
+- **Sistema de Propinas Intuitivo**: Selección rápida de porcentajes con feedback visual, animaciones (**Framer Motion**) y efectos de celebración (**Canvas Confetti**).
+- **Panel de Administración Refinado**:
+  - **Dashboard**: Métricas en tiempo real y visualización de datos.
+  - **Gestión de Propinas**: Historial detallado con filtros avanzados y búsqueda inteligente.
+  - **Gestión de Meseros**: Control total sobre el personal activo y bajas.
+  - **Configuración Dinámica**: Ajuste en tiempo real de los porcentajes de propina sugeridos.
+- **Rastreo de Tickets**: Interfaz pública para consulta rápida de estado.
+- **Automatización en Windows**: Scripts dedicados para arranque persistente y actualizaciones automáticas.
+- **Documentación Interna**: Código fuente documentado íntegramente en español para facilitar el mantenimiento.
+- **Base de Datos**: MySQL robusto con soporte para conexiones seguras (SSL).
 
 ## 🛠️ Tecnologías
 
-- **Core**: Next.js 16 (App Router), React 19
+- **Core**: Next.js 15.1 (App Router), React 19
 - **Estilos**: Tailwind CSS 4, shadcn/ui
 - **Animaciones**: Framer Motion, Canvas Confetti
 - **Base de Datos**: MySQL (driver `mysql2`)
@@ -32,94 +30,76 @@ Sistema de gestión de propinas digital para Sunset Monalisa. Aplicación web mo
 
 ## 📋 Requisitos Previos
 
-- Node.js 18+
-- Servidor MySQL (Local o en la nube como Neon/PlanetScale/AWS)
+- **Node.js**: v18.0 o superior.
+- **MySQL**: Servidor activo (Local o Cloud).
+- **Sistema Operativo**: Optimizado para Windows (vía scripts .bat) pero compatible con Linux/macOS.
 
 ## 🚀 Instalación y Configuración
 
-1. **Clonar el repositorio**:
+1. **Clonar y Acceder**:
 
    ```bash
    git clone https://github.com/GaelCampuzano/Kiosco-Monalisa-V2.git
-   cd kiosco-monalisa-v2
+   cd Kiosco-Monalisa-V2
    ```
 
-2. **Instalar dependencias**:
-
-   ```bash
-   npm install
-   ```
-
-3. **Configurar Variables de Entorno**:
-   Crea un archivo `.env` o `.env.local` en la raíz del proyecto y añade las siguientes variables:
+2. **Variables de Entorno**:
+   Crea un archivo `.env` en la raíz con:
 
    ```env
-   # Configuración de Base de Datos MySQL
-   MYSQL_HOST="localhost"
-   MYSQL_USER="root"
+   MYSQL_HOST="tu_host"
+   MYSQL_USER="tu_usuario"
    MYSQL_PASSWORD="tu_password"
    MYSQL_DATABASE="kiosco_monalisa"
    MYSQL_PORT="3306"
-   # Poner en "true" si la DB requiere SSL (ej. Azure/AWS)
-   MYSQL_SSL="false"
-
-   # Credenciales de Administrador
+   MYSQL_SSL="false" # Cambiar a true si usas Azure/AWS
    ADMIN_USER="admin"
-   ADMIN_PASSWORD="tu_contraseña_segura"
+   ADMIN_PASSWORD="tu_contraseña"
    ```
 
-4. **Inicializar la Base de Datos**:
-   Ejecuta el script de configuración para crear las tablas necesarias (`tips`, `waiters`, `app_settings`):
-
+3. **Inicialización**:
    ```bash
+   npm install
    npm run db:setup
    ```
 
-5. **Ejecutar el servidor de desarrollo**:
-   ```bash
-   npm run dev
-   ```
-   Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+## ⚙️ Operación y Mantenimiento (Windows)
 
-## 🧪 Pruebas
+Para facilitar la operación en el servidor local de Sunset Monalisa, se han incluido scripts de automatización:
 
-El proyecto utiliza **Vitest** para las pruebas unitarias y de integración.
-
-```bash
-# Ejecutar todas las pruebas
-npm test
-
-# Ejecutar pruebas en modo watch
-npm test -- --watch
-```
+- **`start-server.bat`**:
+  - Limpia procesos previos en el puerto 3000.
+  - Detecta automáticamente la IP de la red local.
+  - Inicia el servidor con auto-recuperación (si el proceso falla, se reinicia solo).
+- **`update-server.bat`**:
+  - Realiza un `git pull` (si está configurado), actualiza dependencias y re-construye el proyecto para aplicar cambios de forma segura.
 
 ## 📁 Estructura del Proyecto
 
 ```
-kiosco-monalisa-v2/
+Kiosco-Monalisa-V2/
 ├── app/
-│   ├── actions/          # Server Actions (lógica de servidor y DB)
-│   ├── admin/            # Panel de administración (Dashboard, Propinas, Meseros, Config)
-│   ├── components/       # Componentes de UI compartidos
-│   ├── login/            # Página de inicio de sesión
-│   ├── tickets/          # Página pública de rastreo de tickets
-│   └── layout.tsx        # Layout raíz
-├── hooks/                # Custom React Hooks (useAdminData, etc.)
-├── lib/                  # Utilidades y configuración (db.ts, utils.ts)
-├── public/               # Archivos estáticos
-├── scripts/              # Scripts de utilidad (db-setup.ts)
-├── types/                # Definiciones de tipos TypeScript
-└── __tests__/            # Pruebas manuales/unitarias
+│   ├── actions/          # Lógica de servidor (Server Actions)
+│   ├── admin/            # Panel administrativo
+│   ├── components/       # Componentes de UI y Background optimizado
+│   └── login/            # Sistema de acceso
+├── hooks/                # Hooks personalizados (Admin y Datos)
+├── lib/                  # Configuración de DB y utilidades core
+├── public/               # Assets optimizados (bkg.webp, etc.)
+├── scripts/              # Herramientas de mantenimiento de DB
+└── __tests__/            # Suite de pruebas unitarias
 ```
 
-## 🚀 Despliegue
+## 🧪 Verificación
 
-La aplicación está optimizada para desplegarse en **Vercel** o cualquier hosting compatible con Next.js.
+```bash
+# Ejecutar tests
+npm test
 
-1. **Variables de Entorno**: Asegurate de configurar todas las variables `MYSQL_*` y `ADMIN_*` en tu plataforma de hosting.
-2. **Base de Datos**: Verifica que tu base de datos permita conexiones externas desde la IP de tu hosting.
-3. **Build**: El comando de build estándar es `npm run build`.
+# Formatear código (Prettier)
+npm run format
+```
 
 ## 📄 Licencia
 
-Este proyecto es de uso exclusivo para Sunset Monalisa.
+Este proyecto es propiedad exclusiva de Sunset Monalisa.
