@@ -32,11 +32,11 @@ define(['./workbox-f1770938'], function (e) {
     e.precacheAndRoute(
       [
         {
-          url: '/_next/static/3X4AZLaLPCrHmoH-2720r/_buildManifest.js',
+          url: '/_next/static/0ERUu9pB_R00Qe6pwjLsW/_buildManifest.js',
           revision: '3a3068f6f8e9452cf5dad264f3ec2238',
         },
         {
-          url: '/_next/static/3X4AZLaLPCrHmoH-2720r/_ssgManifest.js',
+          url: '/_next/static/0ERUu9pB_R00Qe6pwjLsW/_ssgManifest.js',
           revision: 'b6652df95db52feb4daf4eca35380933',
         },
         { url: '/_next/static/chunks/139.7a5a8e93a21948c1.js', revision: '7a5a8e93a21948c1' },
@@ -75,7 +75,7 @@ define(['./workbox-f1770938'], function (e) {
           url: '/_next/static/chunks/app/login/page-dbde7136a0220201.js',
           revision: 'dbde7136a0220201',
         },
-        { url: '/_next/static/chunks/app/page-48220d29a40c0245.js', revision: '48220d29a40c0245' },
+        { url: '/_next/static/chunks/app/page-6cf7b941369841b0.js', revision: '6cf7b941369841b0' },
         { url: '/_next/static/chunks/framework-d7de93249215fb06.js', revision: 'd7de93249215fb06' },
         { url: '/_next/static/chunks/main-2ed3316b9594d1b3.js', revision: '2ed3316b9594d1b3' },
         { url: '/_next/static/chunks/main-app-6fd38212b6ed03ae.js', revision: '6fd38212b6ed03ae' },

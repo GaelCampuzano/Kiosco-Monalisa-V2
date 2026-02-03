@@ -6,7 +6,7 @@ export function useImageCache(isOffline: boolean) {
       const cacheImages = async () => {
         try {
           const cache = await caches.open('monalisa-images-v1');
-          const imagesToCache = ['/bkg.jpg', '/logo-monalisa.svg'];
+          const imagesToCache = ['/bkg.webp', '/logo-monalisa.svg'];
 
           await Promise.allSettled(
             imagesToCache.map(async (url) => {
